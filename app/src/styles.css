@@ -132,3 +132,24 @@ body{background:radial-gradient(ellipse at 85% 0%,#E5F0E9 0%,transparent 40%),#F
 .body-legend span{display:inline-flex!important;align-items:center!important;gap:6px!important;padding:7px 10px!important;border-radius:20px!important;background:#FFFFFFC9!important;color:#60736A!important;font-size:10px!important}
 .body-legend i{width:8px!important;height:8px!important;border-radius:50%!important;background:#E7BFD0!important}
 @media(max-width:680px){.exercise-options{max-height:300px!important}.body-map{padding:8px!important;gap:4px!important}.body-map svg{max-height:270px!important}.exercise-option{min-height:60px!important}}
+
+
+/* Training-focused anatomy map v2 */
+.workout-muscle-panel{margin-bottom:16px!important;background:linear-gradient(145deg,#FFFEFC,#F7F0F4)!important;border:1px solid #E5D9E0!important}
+.workout-muscle-panel .section-title{margin-bottom:8px!important}
+.body-map-v2{display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(120px,.9fr)!important;gap:14px!important;align-items:center!important;padding:12px!important;border-radius:16px!important;background:linear-gradient(145deg,#F3F7F2,#F9F0F4)!important;border:1px solid #E4E9E2!important}
+.anatomy-views{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;align-items:end!important}
+.anatomy-side{display:flex!important;flex-direction:column!important;align-items:center!important;gap:3px!important;min-width:0!important}
+.anatomy-figure{width:100%!important;max-width:142px!important;height:auto!important;max-height:220px!important;overflow:visible!important}
+.anatomy-side>b{font-size:9px!important;letter-spacing:1.3px!important;color:#819187!important}
+.muscle-key{display:flex!important;flex-direction:column!important;gap:9px!important;min-width:0!important}
+.muscle-key>strong{font-size:11px!important;color:#52685B!important}
+.muscle-key>div{display:flex!important;flex-direction:column!important;gap:6px!important}
+.muscle-key span{display:flex!important;align-items:center!important;gap:7px!important;padding:6px 8px!important;border-radius:9px!important;background:#FFFFFFB8!important;color:#697C70!important;font-size:10px!important}
+.muscle-key span i{width:8px!important;height:8px!important;border-radius:50%!important;background:#D88EAE!important;flex-shrink:0!important}
+.muscle-key small{color:#87948C!important;font-size:10px!important;line-height:1.5!important}
+.exercise-options{max-height:390px!important}
+.exercise-option{min-height:66px!important}
+.exercise-thumb{width:58px!important;height:50px!important}
+.exercise-thumb svg{width:52px!important;height:44px!important}
+@media(max-width:680px){.body-map-v2{grid-template-columns:1fr!important;gap:8px!important;padding:9px!important}.anatomy-figure{max-height:190px!important;max-width:122px!important}.muscle-key>div{display:grid!important;grid-template-columns:1fr 1fr!important}.exercise-options{max-height:340px!important}}
