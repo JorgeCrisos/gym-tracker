@@ -1,39 +1,35 @@
-# Auditoría inicial de seguridad — RepTrack Pro V8
+# Auditoría de seguridad — GymLog
 
-Fecha: 2026-11-18  
-Alcance: lectura estática de index.html y supabase_schema.sql de main. No se ha accedido al proyecto Supabase ni se han ejecutado consultas o migraciones.
+Fecha: 2026-11-18. Alcance: inspección del esquema real del proyecto Supabase `Gimnasio`, políticas RLS, funciones y frontend de la beta.
 
-## Hallazgos
+## Hallazgos iniciales del esquema existente
+- `member_data_select_same_group` permitía a cualquier miembro leer las filas de todos los miembros del grupo. La fila contiene tanto entrenamientos como datos físicos.
+- Varias funciones SECURITY DEFINER estaban ejecutables por `PUBLIC` y `anon`.
+- `remove_gym_member` borraba la fila privada del miembro expulsado.
+- Las tablas `member_data`, `groups`, `group_members` y `shared_data` ya tenían RLS habilitado.
 
-### Privacidad: lectura de datos de todo el grupo
-En index.html, la función gl7PullState() consulta member_data filtrando solo por group_id y carga workouts y body_data de todas las filas del grupo. Después combina los entrenamientos y perfiles físicos en el estado local del dispositivo.
+## Cambios aplicados en Supabase
+1. Se sustituyó la política de lectura grupal de `member_data` por una política de propietario: `user_id = auth.uid()`.
+2. Se añadió DELETE limitado a la propia fila.
+3. Se revocó EXECUTE de `PUBLIC` y `anon` para las RPC de grupos y guardado conjunto; se concedió a `authenticated` donde procede.
+4. Se revocó la ejecución directa de `rls_auto_enable`.
+5. Se fijó `search_path` en las funciones SECURITY DEFINER.
+6. Se creó `save_gym_workout`, que verifica que el segundo miembro pertenece al mismo grupo y guarda por separado el entrenamiento de cada persona.
+7. Los grupos se limitan a Jorge y Marta, dos miembros y nombres no duplicados.
+8. La expulsión de un miembro ya no elimina su información privada.
 
-En supabase_schema.sql, la política member_data_select_same_group permite SELECT cuando is_group_member(group_id) es verdadero. Por tanto, cualquier miembro del grupo puede leer las filas de los demás. Esto incumple la privacidad individual acordada.
+## Estado de los avisos
+- El asesor ya no detecta ejecución anónima de las RPC SECURITY DEFINER.
+- Mantiene avisos para usuarios autenticados en las RPC que necesitan ejecutarse con privilegios elevados. Es intencional, pero debe probarse con cuentas reales.
+- Sigue activo el aviso de protección de contraseñas filtradas desactivada en Supabase Auth. Puede activarse desde la configuración de Auth del proyecto.
 
-### Escritura conjunta incompatible con el modelo actual
-Las políticas de INSERT y UPDATE limitan las filas al usuario autenticado. Sin embargo, el cliente intenta sincronizar datos usando el user_id de la persona seleccionada. Con esas políticas, una cuenta no puede escribir directamente la fila de la otra. El flujo conjunto desde un único móvil no está resuelto de forma coherente.
+## Pruebas que faltan antes de usar datos reales
+- Crear dos cuentas separadas y unirlas al mismo grupo.
+- Probar lecturas cruzadas de `member_data` desde ambas cuentas; deben devolver cero filas ajenas.
+- Probar la escritura de un entrenamiento conjunto y verificar que cada cuenta recibe solo sus series.
+- Probar un tercer usuario fuera del grupo.
+- Probar reintentos y concurrencia para evitar duplicados.
+- Verificar el despliegue de GitHub Pages y la instalación PWA en iPhone.
 
-### Datos locales y arranque
-La aplicación conserva datos en localStorage y el bloque de arranque V8 elimina determinadas claves gl2_* salvo la configuración de nube. No se debe desplegar una versión modificada sobre datos reales sin estudiar ese efecto y disponer de exportación/copia de seguridad.
-
-### Protección de sesión
-La clave gl8_app_unlocked_v1 en sessionStorage es un bloqueo de interfaz adicional, no autorización. La seguridad real debe depender de Supabase Auth y RLS.
-
-### Credenciales
-En el index.html inspeccionado no aparece una cadena service_role ni una clave de servicio hardcodeada. La app solicita URL y clave pública de Supabase en su configuración. Una clave pública/anon o publishable solo es aceptable en cliente si RLS está correctamente configurado. Nunca publicar service_role, contraseñas ni tokens privados.
-
-## Acciones obligatorias antes de producción
-1. Sustituir el acceso grupal amplio por políticas RLS de propietario y participante.
-2. Separar metadatos de sesión compartida de series y datos personales.
-3. Implementar y probar el flujo de escritura conjunta con permisos mínimos y sin lectura cruzada.
-4. Proteger fotos con Storage privado y políticas por propietario.
-5. Probar SELECT/INSERT/UPDATE/DELETE con dos usuarios distintos y con un usuario ajeno al grupo.
-6. Revisar el esquema real de Supabase antes de cualquier migración.
-7. Añadir exportación/copia de seguridad y procedimiento de recuperación antes de importar datos reales.
-
-## Estado
-- Auditoría estática inicial: realizada.
-- Cambios en Supabase: ninguno.
-- SQL ejecutado: ninguno.
-- Datos reales modificados: ninguno.
-- Código de la aplicación: todavía sin modificar.
+## Limitaciones
+La auditoría de RLS no sustituye una prueba de penetración. No se ha ejecutado todavía un test E2E autenticado con dos usuarios reales. No se debe considerar la beta producción hasta completar esas pruebas.
