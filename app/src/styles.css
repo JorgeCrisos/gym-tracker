@@ -17,3 +17,45 @@
 .auth-error,.auth-message{padding:11px 13px;border-radius:10px;font-size:12px;line-height:1.5}.auth-error{background:#48251f;color:#ffb7a8}.auth-message{background:#26351d;color:#d5f8aa}
 .auth-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}.auth-choice button{border:1px solid #3c4634;border-radius:11px;padding:12px 8px;background:#11150f;color:#aeb6a4;font-weight:700}.auth-choice button.selected{border-color:#b8f34a;color:#d8f7a5;background:#29351f}
 .invite-code{padding:20px;border:1px dashed #b8f34a;border-radius:14px;text-align:center;color:#d5f8aa;font-size:28px;letter-spacing:5px;font-weight:800}
+
+
+/* Pastel refresh */
+:root{--lime:#B7DCCB;--muted:#77867F;--panel:#F8F7F2;--line:#DCE5DE;--pink:#E9B9CE;color:#34443E;background:#F5F6F1}
+body{background:radial-gradient(ellipse at 78% -10%,rgba(183,220,203,.32),transparent 42%),#F5F6F1;color:#34443E}
+.sidebar,.mobile-nav{background:#EEF3EE;border-color:#DCE5DE}
+.brand,.page-top h1,.welcome-card h2,.panel-heading h2,.metric-card>strong,.routine-card h3,.goal-card h3{color:#34443E}
+.brand-icon,.primary-btn,.finish-btn{background:#B7DCCB;color:#29443A}
+.nav-item{color:#72827A}.nav-item.active{color:#527E6A;background:#DFEEE6;border-color:#C4DED0}
+.person-switch,.panel,.metric-card,.session-row,.quick-card{background:#FBFAF6;border-color:#DCE5DE;color:#34443E}
+.person-switch button.chosen{background:#E5EFE8;color:#34443E}
+.welcome-card{background:linear-gradient(110deg,#E4F0E8,#F8EAF0 72%,#F5F0E9);border-color:#D5E5DA}
+.welcome-card h2 em,.eyebrow,.text-btn,.panel-heading>svg,.metric-card>small svg{color:#719D88}
+.welcome-card p,.metric-card>span,.metric-card>small,.helper,.session-detail>small,.muted-count{color:#77867F}
+.log-panel input,.create-panel input,.create-panel select,.create-panel textarea,.log-panel textarea,.log-panel select,.auth-card input,.auth-card select{background:#F5F7F2;color:#34443E;border-color:#D7E2D9}
+.active-banner{background:#E5F1E8;border-color:#C9DFD1;color:#668F7B}
+.active-banner b{color:#34443E}
+.timer-box,.set-row,.mode-grid button,.person-pills button{background:#F3F6F0;border-color:#D8E3D9;color:#34443E}
+.count-badge,.set-number,.routine-icon,.empty-state>span{background:#E1EEE5;color:#648D79}
+.bar-track,.goal-progress{background:#E5EAE3}.bar-track i,.goal-progress i,.volume-column>div{background:linear-gradient(90deg,#B7DCCB,#DDBBD0)}
+.exercise-picker{position:relative;margin-bottom:14px;color:#77867F;font-size:10px;font-weight:700}
+.exercise-picker>label{display:block;margin-bottom:7px}
+.exercise-search-wrap{position:relative}
+.exercise-search-wrap input{width:100%;min-height:44px;border:1px solid #D1DED4;border-radius:10px;background:#F8FAF6;color:#34443E;padding:10px 38px 10px 12px;font-size:13px}
+.picker-chevron{position:absolute;right:13px;top:8px;color:#789486;font-size:19px;pointer-events:none}
+.exercise-options{position:absolute;z-index:12;top:70px;left:0;right:0;max-height:240px;overflow:auto;padding:6px;border:1px solid #D5E2D8;border-radius:12px;background:#FFFEFA;box-shadow:0 12px 28px #40564A22}
+.exercise-options button{display:block;width:100%;padding:10px 11px;border:0;border-radius:8px;background:transparent;color:#43554C;text-align:left;font-size:12px}
+.exercise-options button:hover,.exercise-options button.selected{background:#E7F1E9;color:#507E68}
+.exercise-options .custom-option{border-top:1px solid #E6ECE6;border-radius:0;margin-top:4px;color:#8E6F85}
+.custom-exercise-input{margin-top:8px;width:100%;min-height:42px;border:1px solid #D1DED4;border-radius:9px;background:#F8FAF6;color:#34443E;padding:10px}
+.selected-exercise{display:block;margin-top:6px;color:#829188;font-size:9px;font-weight:500}
+.body-map{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;padding:18px;border:1px solid #DCE7DF;border-radius:14px;background:linear-gradient(135deg,#F4F8F3,#FBF1F5)}
+.body-map>div:not(.body-legend){display:flex;justify-content:center}
+.body-map svg{width:min(100%,210px);height:auto;max-height:310px}
+.body-legend{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid #DFE8E0}
+.body-legend span{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:20px;background:#FFFFFFB8;color:#60736A;font-size:10px}
+.body-legend i{width:8px;height:8px;border-radius:50%;background:#EFAFCB}
+.auth-screen{background:radial-gradient(ellipse at 50% 0%,#E3F0E7 0%,#F5F6F1 60%);color:#34443E}
+.auth-card{background:#FFFEFA;border-color:#DCE5DE;box-shadow:0 24px 80px #70847722}
+.auth-card h1{color:#34443E}.auth-card p{color:#77867F}
+.auth-card label{color:#53665C}.auth-card input,.auth-card select{background:#F5F7F2;color:#34443E;border-color:#D7E2D9}
+@media(max-width:680px){.body-map{padding:10px;gap:5px}.body-map svg{max-height:260px}.exercise-options{max-height:210px}}
