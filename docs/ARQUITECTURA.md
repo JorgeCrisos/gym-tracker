@@ -1,75 +1,60 @@
-# Arquitectura objetivo — GymLog
+# Arquitectura y estado de GymLog
 
-## Objetivo
-Aplicación de entrenamiento para Jorge y Marta, instalable como PWA en iPhone y adaptable a iPad y escritorio. Debe funcionar con conexión intermitente, sincronizar de forma fiable y proteger los datos privados de cada cuenta.
+## Stack y despliegue
+- React 19 + TypeScript + Vite.
+- PWA mediante `vite-plugin-pwa`.
+- Hosting estático: GitHub Pages, con workflow `.github/workflows/deploy-pages.yml`.
+- Backend: Supabase Auth y PostgreSQL.
+- Autorización: Row Level Security (RLS) y RPC con permisos mínimos.
+- Rama de despliegue: `develop`; `main` conserva la aplicación anterior.
 
-## Decisiones propuestas
-- Frontend: React + TypeScript + Vite, sustituyendo progresivamente el HTML monolítico.
-- PWA: manifest, service worker y estrategia offline-first prudente. Los registros pendientes se guardan localmente y se sincronizan al recuperar conexión.
-- Backend: Supabase Auth, PostgreSQL, Row Level Security (RLS), Storage privado y Realtime cuando aporte valor.
-- Despliegue: Netlify conectado a GitHub; previews desde ramas/PR.
-- Calidad: TypeScript estricto, ESLint y pruebas de lógica y de políticas RLS.
+## Modelo de datos Supabase actualmente utilizado
+El proyecto Supabase `Gimnasio` ya contenía estas tablas:
+- `groups`: espacio de dos personas, código de invitación y creador.
+- `group_members`: relación entre cuenta autenticada y perfil Jorge/Marta.
+- `member_data`: fila privada por miembro; guarda entrenamientos en `workouts` y datos personales en `body_data`.
+- `shared_data`: rutinas compartidas del grupo.
 
-## Modelo funcional
-1. Cada persona tiene su propia cuenta y perfil.
-2. Las sesiones individuales son privadas.
-3. Las sesiones conjuntas tienen participantes explícitos. Se pueden registrar desde un solo teléfono, pero cada participante tiene sus propias series, cargas, repeticiones, RPE y notas.
-4. Las rutinas pueden ser privadas o compartidas explícitamente.
-5. Peso, medidas, fotos, sueño, sensaciones y fatiga son privados por defecto.
-6. Las comparativas solo muestran datos agregados o métricas autorizadas por ambas personas.
+No se ha creado un esquema paralelo innecesario. Se ha reforzado el esquema existente.
 
-## Modelo de datos objetivo (borrador)
-- profiles: perfil asociado a auth.users.
-- groups y group_members: vínculo entre cuentas; no concede acceso general a datos privados.
-- exercises: catálogo común.
-- routines y routine_exercises: rutinas con propietario y visibilidad.
-- workout_sessions: fecha, creador, tipo, estado y metadatos.
-- workout_participants: participantes de una sesión conjunta.
-- workout_sets: series vinculadas a participante y ejercicio; peso, repeticiones, RPE, descanso y notas.
-- body_metrics, recovery_logs y goals: datos personales con propietario explícito.
-- progress_photos: metadatos; ficheros en un bucket privado de Supabase Storage.
-- audit_events, si se necesita trazabilidad adicional.
+## Autorización
+- `member_data SELECT`: solo `user_id = auth.uid()`. Ser miembro del mismo grupo ya no permite leer la fila de la otra persona.
+- `member_data INSERT/UPDATE/DELETE`: propia fila y pertenencia al grupo, con RLS.
+- `group_members` y `groups`: visibles para miembros del mismo grupo, para poder resolver el perfil y el código de invitación.
+- `shared_data`: visible y modificable por los miembros del grupo; contiene solo rutinas compartidas.
+- Las RPC de creación/unión/guardado conjunto se conceden a `authenticated`, no a `anon` ni a `PUBLIC`.
+- `rls_auto_enable` no está expuesta como endpoint RPC.
+- `save_gym_workout` verifica que ambas cuentas pertenecen al mismo grupo y divide las series entre sus filas privadas.
+- La operación de expulsión de un miembro no elimina sus datos privados.
 
-El esquema definitivo se diseñará y revisará antes de ejecutar cualquier migración en Supabase.
+## Flujos de usuario
+1. Cada persona registra su propia cuenta Supabase Auth.
+2. Una persona crea el grupo eligiendo Jorge o Marta.
+3. Comparte el código de invitación.
+4. La segunda persona se une eligiendo el perfil restante. El RPC limita el grupo a dos miembros y evita nombres duplicados.
+5. La aplicación carga únicamente `member_data` del usuario autenticado y las rutinas explícitamente compartidas.
+6. En sesión conjunta, cada serie se atribuye a la persona seleccionada. Al finalizar, el RPC escribe la parte de cada persona en su fila privada.
 
-## Reglas de autorización
-- RLS activado en todas las tablas con datos de usuario.
-- Ser miembro del grupo no permite leer métricas, recuperación, fotos, objetivos ni series privadas de otra persona.
-- Las series se consultan por propietario/participante autorizado, nunca descargando todos los datos del grupo.
-- Una sesión conjunta comparte solo metadatos necesarios y pertenencia. Cada persona conserva el control de sus datos personales.
-- Para registrar a ambos desde un solo móvil se diseñará una operación de escritura limitada a una sesión conjunta activa y a participantes del mismo grupo. Ese permiso de escritura no concede lectura del historial del otro.
-- Las fotos usarán Storage privado.
-- Nunca incluir service_role ni secretos de servidor en el frontend.
+## Estado funcional
+- Interfaz: inicio, entrenar, rutinas, historial, estadísticas, objetivos y perfil.
+- Entrenamiento: peso, repeticiones, RPE, descanso, temporizador y sesión individual/conjunta.
+- Datos personales: objetivos, medidas y recuperación.
+- Exportación CSV.
+- Autenticación: registro e inicio de sesión por correo/contraseña.
+- Vinculación de cuentas: crear grupo, compartir código y unirse.
+- Sincronización: entrenamientos completados y datos de perfil a Supabase.
+- No implementado aún: cola offline robusta, fotos privadas en Storage, Realtime, recuperación de conflictos multi-dispositivo y pruebas E2E automatizadas.
 
-## Flujo de entrenamiento conjunto
-1. Una persona inicia una sesión conjunta y selecciona al otro participante.
-2. Se crea una sesión con dos participantes.
-3. En cada ejercicio se muestran entradas separadas para cada persona.
-4. El móvil puede introducir series de ambos, identificando siempre al propietario de cada serie.
-5. Cada cuenta sincroniza y consulta solo los datos autorizados.
+## Seguridad pendiente de validar
+La base ya tiene RLS reforzada, pero todavía hay que completar pruebas funcionales con dos cuentas reales:
+- Jorge no puede leer `member_data` de Marta.
+- Marta no puede leer `member_data` de Jorge.
+- Ambos pueden consultar las rutinas compartidas.
+- En modo conjunto, el móvil del creador puede registrar series para ambas cuentas.
+- Un usuario externo no puede consultar grupos ni datos privados.
+- Reintentos de guardado no duplican entrenamientos.
 
-## Módulos de interfaz
-- Inicio y selector: Jorge, Marta o entrenar juntos.
-- Entrenar: sesión activa, ejercicios, series, descansos y guardado automático.
-- Rutinas y planificación semanal.
-- Historial y calendario.
-- Estadísticas: volumen, frecuencia, evolución, grupos musculares y récords.
-- Objetivos.
-- Perfil: medidas, peso, recuperación y ajustes.
-- Exportación CSV/Excel.
+El asesor de Supabase sigue señalando funciones SECURITY DEFINER accesibles a `authenticated`. Es intencional para las RPC necesarias y las políticas RLS; ya no están disponibles para usuarios anónimos. También advierte que la protección de contraseñas filtradas de Auth está desactivada en la configuración del proyecto.
 
-## Migración desde RepTrack V8
-1. Conservar index.html, index_v1_backup.html y supabase_schema.sql como legado; no borrarlos ni ejecutarlos.
-2. Crear la nueva aplicación en módulos independientes.
-3. Diseñar el nuevo esquema y probar RLS en un entorno Supabase de desarrollo.
-4. Validar cuentas, privacidad, sesiones conjuntas y sincronización con datos de prueba.
-5. Preparar importación opcional de datos antiguos, con copia de seguridad y mapeo explícito de propietarios.
-6. Desplegar una preview y solo después decidir el cambio de producción.
-
-## Criterios de aceptación
-- Jorge no puede consultar datos privados de Marta y viceversa, ni manipulando peticiones desde el navegador.
-- Una sesión conjunta se registra desde un móvil con series separadas.
-- Ambos dispositivos ven la información autorizada y sincronizan sin duplicados.
-- Los datos sobreviven a cierre, recarga y pérdida temporal de conexión.
-- La aplicación es instalable y usable en iPhone, iPad y escritorio.
-- No se publica ningún secreto ni se ejecutan migraciones no revisadas.
+## PWA en GitHub Pages
+Vite utiliza la base `/gym-tracker/`, incluida en manifest y service worker. El workflow publica el directorio `dist/`. Para que funcione, Pages debe estar habilitado con fuente **GitHub Actions**; al ser privado el repositorio, el plan de GitHub puede condicionar esta función.
