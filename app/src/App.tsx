@@ -10,8 +10,9 @@ type Exercise = { id: string; name: string; sets: number; reps: number; rest: nu
 type Routine = { id: string; name: string; owner: Person | 'shared'; exercises: Exercise[] }
 type Goal = { id: string; person: Person; title: string; target: number; current: number }
 type Metric = { id: string; person: Person; date: string; weight: number; waist: number }
+type BodyProfile = { heightCm: number; age: number; sex: 'male' | 'female'; targetWeight: number }
 type Recovery = { id: string; person: Person; date: string; sleep: number; feeling: number; fatigue: number; note: string }
-export type AppData = { workouts: Workout[]; routines: Routine[]; goals: Goal[]; metrics: Metric[]; recovery: Recovery[]; active: { mode: Mode; people: Person[]; startedAt: number; sets: SetEntry[]; note: string } | null }
+export type AppData = { workouts: Workout[]; routines: Routine[]; goals: Goal[]; metrics: Metric[]; recovery: Recovery[]; bodyProfile?: BodyProfile; active: { mode: Mode; people: Person[]; startedAt: number; sets: SetEntry[]; note: string } | null }
 const KEY = 'gymlog_v1_data'
 const names: Record<Person, string> = { jorge: 'Jorge', marta: 'Marta' }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -44,6 +45,10 @@ function muscleGroup(name: string): string {
   return 'Otros'
 }
 function estimatedOneRepMax(weight: number, reps: number) { return reps <= 1 ? weight : weight * (1 + Math.min(reps, 12) / 30) }
+const exerciseCatalog = ['Press banca','Press inclinado con barra','Press inclinado con mancuernas','Aperturas con mancuernas','Flexiones','Peck deck','Press militar','Elevaciones laterales','Pájaros','Face pull','Remo con barra','Remo con mancuerna','Remo en polea','Jalón al pecho','Dominadas','Peso muerto','Peso muerto rumano','Buenos días','Sentadilla','Sentadilla búlgara','Prensa','Extensión de cuádriceps','Zancadas','Curl femoral','Hip thrust','Puente de glúteos','Abducción de cadera','Patada de glúteo','Curl de bíceps','Curl martillo','Curl en polea','Extensión de tríceps','Press francés','Fondos','Plancha','Crunch abdominal','Elevación de piernas','Dead bug','Pallof press','Gemelos de pie','Gemelos sentado'];
+function muscleTargets(name:string):string[]{const n=name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(/sentadilla|prensa|extension de cuadriceps|zancada/.test(n))return ['quads','glutes'];if(/hip thrust|puente de gluteos|abduccion|patada de gluteo/.test(n))return ['glutes'];if(/peso muerto|curl femoral|rumano|buenos dias/.test(n))return ['hamstrings','glutes','lowerback'];if(/press banca|press inclinado|apertura|flexiones|peck deck/.test(n))return ['chest','triceps','shoulders'];if(/remo|jalon|dominada/.test(n))return ['upperback','biceps'];if(/press militar|elevacion lateral|face pull|pajaro/.test(n))return ['shoulders','triceps'];if(/curl.*biceps|biceps|martillo/.test(n))return ['biceps','forearms'];if(/triceps|extension de codo|press frances|fondos/.test(n))return ['triceps'];if(/plancha|abdominal|crunch|dead bug|pallof/.test(n))return ['abs'];if(/gemelo|soleo|elevacion de talones/.test(n))return ['calves'];return [];}
+function bodyFatEstimate(weight:number,heightCm:number,age:number,sex:'male'|'female'){if(!weight||!heightCm||!age)return null;const bmi=weight/((heightCm/100)**2);return Math.max(3,Math.min(60,1.2*bmi+0.23*age-(sex==='male'?10.8:0)-5.4));}
+
 
 type AppProps = {
   initialData?: AppData
@@ -62,6 +67,8 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
   const [tab, setTab] = useState<Tab>('home')
   const [person, setPerson] = useState<Person>(currentPerson ?? 'jorge')
   const [exercise, setExercise] = useState('Press banca')
+  const [customExercise, setCustomExercise] = useState('')
+  const [finishing, setFinishing] = useState(false)
   const [weight, setWeight] = useState('20')
   const [reps, setReps] = useState('10')
   const [rpe, setRpe] = useState('7')
@@ -74,6 +81,10 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
   const [goalTarget, setGoalTarget] = useState('3')
   const [metricWeight, setMetricWeight] = useState('')
   const [metricWaist, setMetricWaist] = useState('')
+  const [heightCm, setHeightCm] = useState('')
+  const [ageYears, setAgeYears] = useState('')
+  const [bodySex, setBodySex] = useState<'male'|'female'>('male')
+  const [targetWeight, setTargetWeight] = useState('')
   const [sleep, setSleep] = useState('8')
   const [feeling, setFeeling] = useState('4')
   const [fatigue, setFatigue] = useState('3')
@@ -106,6 +117,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     sets.forEach(s => best.set(s.exercise, Math.max(best.get(s.exercise) || 0, estimatedOneRepMax(s.weight, s.reps))))
     return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
   }, [sets])
+  const recentMuscles = useMemo(() => { const since=Date.now()-30*86400000; return Array.from(new Set(workouts.filter(w=>new Date(w.date+'T23:59:59').getTime()>=since).flatMap(w=>w.sets.filter(s=>s.person===person).flatMap(s=>muscleTargets(s.exercise))))) }, [workouts,person])
   const muscleVolumes = useMemo(() => {
     const totals = new Map<string, number>()
     sets.forEach(s => { const group = muscleGroup(s.exercise); totals.set(group, (totals.get(group) || 0) + s.weight * s.reps) })
@@ -121,7 +133,9 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
   function addSet() {
     if (!data.active) return
     const p = data.active.people.includes(activeSetPerson) ? activeSetPerson : data.active.people[0]
-    const entry: SetEntry = { id: uid(), exercise: exercise.trim() || 'Ejercicio', person: p, weight: Math.max(0, Number(weight) || 0), reps: Math.max(0, Number(reps) || 0), rpe: Math.min(10, Math.max(1, Number(rpe) || 7)), rest: Math.max(0, Number(rest) || 0) }
+    const chosenExercise=exercise==='__custom__'?customExercise.trim():exercise.trim()
+    if(!chosenExercise){setNotice('Selecciona o escribe un ejercicio');return}
+    const entry: SetEntry = { id: uid(), exercise: chosenExercise || 'Ejercicio', person: p, weight: Math.max(0, Number(weight) || 0), reps: Math.max(0, Number(reps) || 0), rpe: Math.min(10, Math.max(1, Number(rpe) || 7)), rest: Math.max(0, Number(rest) || 0) }
     setData(d => d.active ? { ...d, active: { ...d.active, sets: [...d.active.sets, entry] } } : d)
     setTimer(entry.rest); setRunning(true); setNotice('Serie guardada · ' + names[p])
   }
@@ -130,6 +144,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     if (!data.active.sets.length) { setNotice('Añade al menos una serie'); return }
     const a = data.active
     const workout: Workout = { id: uid(), date: today(), mode: a.mode, people: a.people, sets: a.sets, duration: Math.max(1, Math.round((Date.now() - a.startedAt) / 60000)), note: a.note }
+    setFinishing(true)
     if (cloudEnabled && onWorkoutSave) {
       const ownWorkout: Workout = { ...workout, people: [person], sets: workout.sets.filter(s => s.person === person) }
       const partnerWorkout = a.mode === 'together' && partnerPerson && partnerUserId
@@ -138,12 +153,12 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
       if (!ownWorkout.sets.length) { setNotice('Añade al menos una serie de tu perfil'); return }
       if (a.mode === 'together' && (!partnerWorkout || !partnerWorkout.sets.length)) { setNotice('Faltan series de la otra persona'); return }
       try { await onWorkoutSave(ownWorkout, partnerWorkout) }
-      catch { setNotice('No se pudo sincronizar el entrenamiento'); return }
+      catch (e) { setNotice('Error al sincronizar: '+(e instanceof Error?e.message:'revisa tu conexión')); setFinishing(false); return }
       setData(d => ({ ...d, workouts: [ownWorkout, ...d.workouts], active: null }))
     } else {
       setData(d => ({ ...d, workouts: [workout, ...d.workouts], active: null }))
     }
-    setRunning(false); setTimer(0); setTab('history'); setNotice('Entrenamiento guardado')
+    setRunning(false); setTimer(0); setTab('history'); setNotice('Entrenamiento guardado'); setFinishing(false)
   }
   function createRoutine() {
     const ex = routineExercises.split(',').map(x => x.trim()).filter(Boolean)
@@ -205,9 +220,9 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
             ? <button onClick={() => start(person)}><span className={'person-bubble ' + person}>{person === 'jorge' ? 'J' : 'M'}</span><b>{names[person]}</b><small>Individual</small></button>
             : <><button onClick={() => start('jorge')}><span className="person-bubble jorge">J</span><b>Jorge</b><small>Individual</small></button><button onClick={() => start('marta')}><span className="person-bubble marta">M</span><b>Marta</b><small>Individual</small></button></>}
             {(!cloudEnabled || partnerPerson) && <button onClick={() => start('together')}><span className="person-bubble joint"><Users size={20} /></span><b>Juntos</b><small>Un móvil, dos registros</small></button>}</div><p className="helper">En modo conjunto, cada serie queda vinculada a la persona seleccionada.</p></div> : <>
-          <div className="active-banner"><div><i /> SESIÓN EN CURSO <b>· {data.active.mode === 'together' ? 'Juntos' : names[data.active.people[0]]}</b></div><button className="finish-btn" onClick={finish}><Check size={16} /> Finalizar</button></div>
+          <div className="active-banner"><div><i /> SESIÓN EN CURSO <b>· {data.active.mode === 'together' ? 'Juntos' : names[data.active.people[0]]}</b></div><button className="finish-btn" onClick={finish} disabled={finishing}><Check size={16} /> {finishing?'Guardando…':'Finalizar'}</button></div>
           <div className="training-grid"><div className="panel log-panel"><div className="panel-heading"><div><span className="eyebrow">REGISTRO DE SERIES</span><h2>Añadir serie</h2></div><Dumbbell size={22} /></div>
-            <label>Ejercicio<input value={exercise} onChange={e => setExercise(e.target.value)} list="exercise-list" placeholder="Ej. Press banca" /><datalist id="exercise-list">{data.routines.flatMap(r => r.exercises).map(e => <option key={e.id} value={e.name} />)}</datalist></label>
+            <label>Ejercicio<select value={exercise} onChange={e=>setExercise(e.target.value)}><optgroup label="Ejercicios habituales">{exerciseCatalog.map(name=><option key={name} value={name}>{name}</option>)}</optgroup><optgroup label="Tus rutinas">{Array.from(new Set(data.routines.flatMap(r=>r.exercises.map(e=>e.name)))).filter(name=>!exerciseCatalog.includes(name)).map(name=><option key={name} value={name}>{name}</option>)}</optgroup><option value="__custom__">＋ Otro ejercicio…</option></select>{exercise==='__custom__'&&<input value={customExercise} onChange={e=>setCustomExercise(e.target.value)} placeholder="Escribe el ejercicio"/></label>
             {data.active.people.length > 1 && <div className="field"><span>¿De quién es esta serie?</span><div className="person-pills">{data.active.people.map(p => <button key={p} className={activeSetPerson === p ? 'selected ' + p : ''} onClick={() => setSetPerson(p)}>{names[p]}</button>)}</div></div>}
             <div className="input-row"><label>Peso (kg)<input type="number" min="0" step="0.5" value={weight} onChange={e => setWeight(e.target.value)} /></label><label>Repeticiones<input type="number" min="0" value={reps} onChange={e => setReps(e.target.value)} /></label></div>
             <div className="input-row"><label>RPE (1–10)<input type="number" min="1" max="10" value={rpe} onChange={e => setRpe(e.target.value)} /></label><label>Descanso (seg)<input type="number" min="0" value={rest} onChange={e => setRest(e.target.value)} /></label></div>
