@@ -76,7 +76,7 @@ export default function CloudGate() {
       if (sharedError) throw sharedError
       const body = (memberData?.body_data ?? {}) as {
         personal_routines?: AppData['routines']; goals?: AppData['goals'];
-        metrics?: AppData['metrics']; recovery?: AppData['recovery']
+        metrics?: AppData['metrics']; recovery?: AppData['recovery']; body_profile?: AppData['bodyProfile']
       }
       const workouts = Array.isArray(memberData?.workouts) ? memberData.workouts as Workout[] : []
       const savedSharedRoutines = Array.isArray(sharedData?.routines) ? (sharedData.routines as AppData['routines']).map(r => ({ ...r, owner: 'shared' as const })) : []
@@ -88,7 +88,8 @@ export default function CloudGate() {
         routines: [...personalRoutines, ...sharedRoutines],
         goals: Array.isArray(body.goals) ? body.goals.map(g => ({ ...g, person })) : [],
         metrics: Array.isArray(body.metrics) ? body.metrics.map(m => ({ ...m, person })) : [],
-        recovery: Array.isArray(body.recovery) ? body.recovery.map(r => ({ ...r, person })) : []
+        recovery: Array.isArray(body.recovery) ? body.recovery.map(r => ({ ...r, person })) : [],
+        bodyProfile: body.body_profile
       }
       setBundle({ group: group as GroupInfo, members: (members ?? []) as GroupMember[], person, partner, initialData })
     } catch (e) {
@@ -147,6 +148,7 @@ export default function CloudGate() {
       goals: data.goals.filter(g => g.person === bundle.person),
       metrics: data.metrics.filter(m => m.person === bundle.person),
       recovery: data.recovery.filter(r => r.person === bundle.person),
+      body_profile: data.bodyProfile,
       personal_routines: data.routines.filter(r => r.owner === bundle.person)
     }
     const { data: existing, error: lookupError } = await supabase.from('member_data')
