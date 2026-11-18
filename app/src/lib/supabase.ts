@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Publishable client key: safe to ship in a browser. Database access is protected by RLS.
+// Legacy anon client key: safe to ship in a browser. Database access is protected by RLS.
 const supabaseUrl = 'https://hozoeaitandlypoqzlgf.supabase.co'
-const supabasePublishableKey = 'sb_publishable_qQej0RB8b3nnvCu0qTslFQ_WS3CBdu0w'
+const supabasePublishableKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvem9lYWl0YW5kbHlwb3F6bGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNjI5MzksImV4cCI6MjEwNTYzODkzOX0.HOKssNWyMSeZIEeaSdYFpqonGcMPm8ZNkdgzu1B0fg0'
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey)
 
