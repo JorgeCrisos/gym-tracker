@@ -34,7 +34,6 @@ export default function App() {
   const [data, setData] = useState<AppData>(load)
   const [tab, setTab] = useState<Tab>('home')
   const [person, setPerson] = useState<Person>('jorge')
-  const [mode, setMode] = useState<Mode>('jorge')
   const [exercise, setExercise] = useState('Press banca')
   const [weight, setWeight] = useState('20')
   const [reps, setReps] = useState('10')
@@ -71,7 +70,7 @@ export default function App() {
 
   function start(next: Mode) {
     const people: Person[] = next === 'together' ? ['jorge', 'marta'] : [next]
-    setMode(next); setSetPerson(people[0])
+    setSetPerson(people[0])
     setData(d => ({ ...d, active: { mode: next, people, startedAt: Date.now(), sets: [], note: '' } }))
     setTab('train'); setNotice('Entrenamiento iniciado')
   }
