@@ -20,6 +20,13 @@ The unused normalized schema design was moved to `supabase/drafts/` so it cannot
 - Joint training writes are performed through a SECURITY DEFINER RPC with explicit checks that both users belong to the same group.
 - The browser contains only the Supabase publishable key. Never add `service_role` to frontend code or GitHub Pages artifacts.
 
+## Supabase Auth URL configuration
+In Supabase Dashboard → Authentication → URL Configuration:
+- Set the Site URL to `https://jorgecrisos.github.io/gym-tracker/`.
+- Add `https://jorgecrisos.github.io/gym-tracker/**` to the Redirect URLs allowlist.
+
+This allowlist is required for the email-confirmation link to return to the app.
+
 ## Account setup
 1. Register the first account in GymLog and create a group using the correct profile name.
 2. Share the invite code.
