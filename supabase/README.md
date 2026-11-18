@@ -1,25 +1,30 @@
-# GymLog Supabase setup
+# GymLog Supabase
 
-This is a proposed schema for a dedicated GymLog Supabase project. It has NOT been executed. Do not run it against the Financias project or the old RepTrack schema.
+GymLog uses the existing project **Gimnasio** and its existing tables: `groups`, `group_members`, `member_data` and `shared_data`. It does not use the separate normalized schema proposal.
 
-The migration uses gymlog-prefixed table names to avoid collisions with legacy tables. It enables RLS on all application tables and keeps sets, measurements, recovery, goals and photos private to their owner. Joint-session metadata is shared only with explicit participants.
+## Applied migrations
+The SQL files in `supabase/migrations/` correspond to migrations applied to project `hozoeaitandlypoqzlgf`:
+- Private member data: `member_data` is readable only by its owner.
+- RPC access: group and joint-save functions are not executable by anonymous users.
+- Joint training: `save_gym_workout` verifies group membership and writes each participant's sets to their own private row.
+- Group setup: a group is limited to two profiles, Jorge and Marta.
+- Member removal: removing membership never deletes the other person's private history.
 
-## Current application status
-The React app currently saves data to browser localStorage on the current device. It is a local beta, not yet cloud-synced. The Jorge/Marta selector is not an authentication boundary. Do not store real private data for both people on a shared device until separate sign-in and cloud RLS are implemented.
+The unused normalized schema design was moved to `supabase/drafts/` so it cannot be applied accidentally by a normal migration push.
 
-## Before applying
-1. Confirm the target is a dedicated GymLog project, not Financias.
-2. Inspect existing tables and back up any data.
-3. Apply to a development project only.
-4. Run Supabase security and performance advisors.
-5. Test with two distinct accounts: neither account may read the other's sets, metrics, recovery, goals or photos.
-6. Complete invitation/onboarding for adding the second account to a group before using joint sessions.
-7. Configure frontend environment variables only after the schema and policies are verified.
+## Security model
+- Each account has a separate Supabase Auth identity.
+- Each person can read their own `member_data` row only.
+- Group membership exposes the group and member display names, not private workout/body data.
+- `shared_data.routines` is intentionally visible to both members.
+- Joint training writes are performed through a SECURITY DEFINER RPC with explicit checks that both users belong to the same group.
+- The browser contains only the Supabase publishable key. Never add `service_role` to frontend code or GitHub Pages artifacts.
 
-## Joint session permissions
-The private record_joint_set RPC is constrained: the authenticated creator may insert a set for a participant in their own unfinished joint session. It does not grant SELECT access to another participant's history. A proper invitation/onboarding flow is still required before this path is usable end-to-end.
+## Account setup
+1. Register the first account in GymLog and create a group using the correct profile name.
+2. Share the invite code.
+3. Register the second account and join using the code, selecting the remaining profile name.
+4. Reload the first account after the second member joins.
 
-## Photos
-A private gymlog-progress bucket is created. Object paths must start with the authenticated user's UUID, followed by a filename.
-
-The schema has not been deployed to any Supabase project.
+## Before real use
+Complete the two-account tests in `supabase/tests/ACCEPTANCE_TEST_PLAN.md`. Supabase Auth currently has leaked-password protection disabled; enable it in the project's Auth password-security settings when available. The app has not yet completed a live end-to-end test with two user accounts.
