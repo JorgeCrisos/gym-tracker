@@ -113,7 +113,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
   function start(next: Mode) {
     const people: Person[] = next === 'together' ? ['jorge', 'marta'] : [next]
-    setSetPerson(people[0])
+    setSetPerson(people.includes(person) ? person : people[0])
     setData(d => ({ ...d, active: { mode: next, people, startedAt: Date.now(), sets: [], note: '' } }))
     setTab('train'); setNotice('Entrenamiento iniciado')
   }
