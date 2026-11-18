@@ -1,12 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Publishable client key: safe to ship in a browser. Database access is protected by RLS.
+const supabaseUrl = 'https://hozoeaitandlypoqzlgf.supabase.co'
+const supabasePublishableKey = 'sb_publishable_qQej0RB8b3nnvCu0qTslFQ_WS3CBdu0w'
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey)
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-    })
-  : null
+export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+})
