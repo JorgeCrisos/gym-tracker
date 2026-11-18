@@ -92,7 +92,10 @@ export default function CloudGate() {
     e.preventDefault(); setAuthBusy(true); setError(''); setMessage('')
     try {
       if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(), password,
+          options: { emailRedirectTo: 'https://jorgecrisos.github.io/gym-tracker/' }
+        })
         if (error) throw error
         if (!data.session) setMessage('Te hemos enviado un correo para confirmar la cuenta. Cuando la confirmes, inicia sesión aquí.')
         else setMessage('Cuenta creada. Ahora configura el grupo de entrenamiento.')
