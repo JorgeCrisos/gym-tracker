@@ -9,7 +9,17 @@ type GroupMember = { group_id: string; user_id: string; display_name: string }
 type GroupInfo = { id: string; name: string; invite_code: string }
 type CloudBundle = { group: GroupInfo; members: GroupMember[]; person: Person; partner: GroupMember | null; initialData: AppData }
 
-const blankData = (): AppData => ({ workouts: [], routines: [], goals: [], metrics: [], recovery: [], active: null })
+const defaultSharedRoutines: AppData['routines'] = [{
+  id: 'gymlog-full-body-a', name: 'Full body A', owner: 'shared',
+  exercises: [
+    { id: 'seed-squat', name: 'Sentadilla', sets: 3, reps: 10, rest: 120 },
+    { id: 'seed-bench', name: 'Press banca', sets: 3, reps: 10, rest: 90 },
+    { id: 'seed-row', name: 'Remo con mancuerna', sets: 3, reps: 12, rest: 90 },
+    { id: 'seed-rdl', name: 'Peso muerto rumano', sets: 3, reps: 10, rest: 120 },
+    { id: 'seed-plank', name: 'Plancha', sets: 3, reps: 40, rest: 60 }
+  ]
+}]
+const blankData = (): AppData => ({ workouts: [], routines: defaultSharedRoutines, goals: [], metrics: [], recovery: [], active: null })
 const asPerson = (name: string): Person => name.toLowerCase() === 'marta' ? 'marta' : 'jorge'
 
 export default function CloudGate() {
@@ -69,7 +79,8 @@ export default function CloudGate() {
         metrics?: AppData['metrics']; recovery?: AppData['recovery']
       }
       const workouts = Array.isArray(memberData?.workouts) ? memberData.workouts as Workout[] : []
-      const sharedRoutines = Array.isArray(sharedData?.routines) ? (sharedData.routines as AppData['routines']).map(r => ({ ...r, owner: 'shared' as const })) : []
+      const savedSharedRoutines = Array.isArray(sharedData?.routines) ? (sharedData.routines as AppData['routines']).map(r => ({ ...r, owner: 'shared' as const })) : []
+      const sharedRoutines = savedSharedRoutines.length ? savedSharedRoutines : defaultSharedRoutines
       const personalRoutines = Array.isArray(body.personal_routines) ? body.personal_routines.map(r => ({ ...r, owner: person })) : []
       const initialData: AppData = {
         ...blankData(),
