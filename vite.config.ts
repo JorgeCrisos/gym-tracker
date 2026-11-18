@@ -2,7 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const base = '/gym-tracker/'
+
 export default defineConfig({
+  base,
   root: 'app',
   plugins: [
     react(),
@@ -17,12 +20,16 @@ export default defineConfig({
         background_color: '#11130f',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: base,
+        scope: base,
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
+          { src: `${base}favicon.svg`, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
         ]
       },
-      workbox: { navigateFallback: '/index.html', globPatterns: ['**/*.{js,css,html,svg,woff2}'] }
+      workbox: {
+        navigateFallback: `${base}index.html`,
+        globPatterns: ['**/*.{js,css,html,svg,woff2}']
+      }
     })
   ],
   build: { outDir: '../dist', emptyOutDir: true }
