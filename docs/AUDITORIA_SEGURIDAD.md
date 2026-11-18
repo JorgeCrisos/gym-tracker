@@ -18,6 +18,11 @@ Fecha: 2026-11-18. Alcance: inspección del esquema real del proyecto Supabase `
 7. Los grupos se limitan a Jorge y Marta, dos miembros y nombres no duplicados.
 8. La expulsión de un miembro ya no elimina su información privada.
 
+## Pruebas técnicas ejecutadas
+- Se ejecutó una prueba transaccional con dos usuarios de prueba sintéticos y se verificó que Jorge y Marta solo ven una fila propia de `member_data`; la transacción terminó en ROLLBACK y no dejó usuarios ni datos de prueba.
+- Se ejecutó una prueba transaccional de `save_gym_workout`; se verificó que cada participante recibe únicamente su subconjunto de series. La transacción terminó en ROLLBACK.
+- Falta completar el flujo end-to-end con dos cuentas reales desde la interfaz.
+
 ## Estado de los avisos
 - El asesor ya no detecta ejecución anónima de las RPC SECURITY DEFINER.
 - Mantiene avisos para usuarios autenticados en las RPC que necesitan ejecutarse con privilegios elevados. Es intencional, pero debe probarse con cuentas reales.
