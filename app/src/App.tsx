@@ -23,7 +23,7 @@ const seed: AppData = {
   ]
 }
 function load(): AppData {
-  try { const saved = localStorage.getItem(KEY); return saved ? { ...seed, ...JSON.parse(saved), active: null } : seed } catch { return seed }
+  try { const saved = localStorage.getItem(KEY); return saved ? { ...seed, ...JSON.parse(saved) } : seed } catch { return seed }
 }
 function fmt(date: string) { return new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) }
 function vol(sets: SetEntry[]) { return sets.reduce((sum, s) => sum + s.weight * s.reps, 0) }
