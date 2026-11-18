@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownToLine, BarChart3, CalendarDays, Check, ChevronRight, Clock3, Dumbbell, HeartPulse, History, Home, Plus, Save, Target, Timer, Trash2, Trophy, Users, X } from 'lucide-react'
 
-type Person = 'jorge' | 'marta'
+export type Person = 'jorge' | 'marta'
 type Mode = Person | 'together'
 type Tab = 'home' | 'train' | 'routines' | 'history' | 'stats' | 'goals' | 'profile'
 type SetEntry = { id: string; exercise: string; person: Person; weight: number; reps: number; rpe: number; rest: number }
-type Workout = { id: string; date: string; mode: Mode; people: Person[]; sets: SetEntry[]; duration: number; note: string }
+export type Workout = { id: string; date: string; mode: Mode; people: Person[]; sets: SetEntry[]; duration: number; note: string }
 type Exercise = { id: string; name: string; sets: number; reps: number; rest: number }
 type Routine = { id: string; name: string; owner: Person | 'shared'; exercises: Exercise[] }
 type Goal = { id: string; person: Person; title: string; target: number; current: number }
 type Metric = { id: string; person: Person; date: string; weight: number; waist: number }
 type Recovery = { id: string; person: Person; date: string; sleep: number; feeling: number; fatigue: number; note: string }
-type AppData = { workouts: Workout[]; routines: Routine[]; goals: Goal[]; metrics: Metric[]; recovery: Recovery[]; active: { mode: Mode; people: Person[]; startedAt: number; sets: SetEntry[]; note: string } | null }
+export type AppData = { workouts: Workout[]; routines: Routine[]; goals: Goal[]; metrics: Metric[]; recovery: Recovery[]; active: { mode: Mode; people: Person[]; startedAt: number; sets: SetEntry[]; note: string } | null }
 const KEY = 'gymlog_v1_data'
 const names: Record<Person, string> = { jorge: 'Jorge', marta: 'Marta' }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -45,10 +45,21 @@ function muscleGroup(name: string): string {
 }
 function estimatedOneRepMax(weight: number, reps: number) { return reps <= 1 ? weight : weight * (1 + Math.min(reps, 12) / 30) }
 
-export default function App() {
-  const [data, setData] = useState<AppData>(load)
+type AppProps = {
+  initialData?: AppData
+  currentPerson?: Person
+  partnerPerson?: Person | null
+  partnerUserId?: string | null
+  cloudEnabled?: boolean
+  onWorkoutSave?: (ownWorkout: Workout, partnerWorkout: Workout | null) => Promise<void>
+  onProfileSave?: (data: AppData) => Promise<void>
+  onSignOut?: () => void
+}
+
+export default function App({ initialData, currentPerson, partnerPerson, partnerUserId, cloudEnabled = false, onWorkoutSave, onProfileSave, onSignOut }: AppProps) {
+  const [data, setData] = useState<AppData>(() => initialData ?? load())
   const [tab, setTab] = useState<Tab>('home')
-  const [person, setPerson] = useState<Person>('jorge')
+  const [person, setPerson] = useState<Person>(currentPerson ?? 'jorge')
   const [exercise, setExercise] = useState('Press banca')
   const [weight, setWeight] = useState('20')
   const [reps, setReps] = useState('10')
@@ -69,7 +80,14 @@ export default function App() {
   const [timer, setTimer] = useState(0)
   const [running, setRunning] = useState(false)
   const [notice, setNotice] = useState('')
-  useEffect(() => { localStorage.setItem(KEY, JSON.stringify(data)) }, [data])
+  useEffect(() => { if (!cloudEnabled) localStorage.setItem(KEY, JSON.stringify(data)) }, [data, cloudEnabled])
+  useEffect(() => { if (initialData) setData(initialData) }, [initialData])
+  useEffect(() => { if (currentPerson) setPerson(currentPerson) }, [currentPerson])
+  useEffect(() => {
+    if (!cloudEnabled || !onProfileSave) return
+    const id = window.setTimeout(() => { void onProfileSave(data).catch(() => setNotice('No se pudieron sincronizar los cambios')) }, 650)
+    return () => window.clearTimeout(id)
+  }, [data.goals, data.metrics, data.recovery, data.routines, cloudEnabled, onProfileSave])
   useEffect(() => { if (!running || timer <= 0) return; const id = window.setInterval(() => setTimer(t => { if (t <= 1) { setRunning(false); return 0 } return t - 1 }), 1000); return () => window.clearInterval(id) }, [running, timer])
   useEffect(() => { if (!notice) return; const id = window.setTimeout(() => setNotice(''), 2400); return () => window.clearTimeout(id) }, [notice])
 
@@ -106,12 +124,24 @@ export default function App() {
     setData(d => d.active ? { ...d, active: { ...d.active, sets: [...d.active.sets, entry] } } : d)
     setTimer(entry.rest); setRunning(true); setNotice('Serie guardada · ' + names[p])
   }
-  function finish() {
+  async function finish() {
     if (!data.active) return
     if (!data.active.sets.length) { setNotice('Añade al menos una serie'); return }
     const a = data.active
     const workout: Workout = { id: uid(), date: today(), mode: a.mode, people: a.people, sets: a.sets, duration: Math.max(1, Math.round((Date.now() - a.startedAt) / 60000)), note: a.note }
-    setData(d => ({ ...d, workouts: [workout, ...d.workouts], active: null }))
+    if (cloudEnabled && onWorkoutSave) {
+      const ownWorkout: Workout = { ...workout, people: [person], sets: workout.sets.filter(s => s.person === person) }
+      const partnerWorkout = a.mode === 'together' && partnerPerson && partnerUserId
+        ? { ...workout, people: [partnerPerson], sets: workout.sets.filter(s => s.person === partnerPerson) }
+        : null
+      if (!ownWorkout.sets.length) { setNotice('Añade al menos una serie de tu perfil'); return }
+      if (a.mode === 'together' && (!partnerWorkout || !partnerWorkout.sets.length)) { setNotice('Faltan series de la otra persona'); return }
+      try { await onWorkoutSave(ownWorkout, partnerWorkout) }
+      catch { setNotice('No se pudo sincronizar el entrenamiento'); return }
+      setData(d => ({ ...d, workouts: [ownWorkout, ...d.workouts], active: null }))
+    } else {
+      setData(d => ({ ...d, workouts: [workout, ...d.workouts], active: null }))
+    }
     setRunning(false); setTimer(0); setTab('history'); setNotice('Entrenamiento guardado')
   }
   function createRoutine() {
@@ -152,11 +182,13 @@ export default function App() {
       <a className="brand" href="#" onClick={e => { e.preventDefault(); setTab('home') }}><span className="brand-icon"><Dumbbell size={19} /></span><span>gym<span>log</span></span></a>
       <div className="side-label">TU ESPACIO</div>
       <nav>{nav.map(n => <button key={n.id} className={'nav-item ' + (tab === n.id ? 'active' : '')} onClick={() => setTab(n.id)}><n.icon size={18} /><span>{n.label}</span>{n.id === 'train' && data.active && <i />}</button>)}</nav>
-      <div className="sidebar-bottom"><div className="privacy-note"><Activity size={16} /><span>Guardado automático<br /><b>En este dispositivo</b></span></div><small>GYMLOG · BETA LOCAL</small></div>
+      <div className="sidebar-bottom"><div className="privacy-note"><Activity size={16} /><span>Guardado automático<br /><b>{cloudEnabled ? 'Sincronizado' : 'En este dispositivo'}</b></span></div><small>GYMLOG · {cloudEnabled ? 'CLOUD' : 'BETA LOCAL'}</small></div>
     </aside>
     <main className="main">
-      <header className="mobile-header"><a className="brand" href="#" onClick={e => { e.preventDefault(); setTab('home') }}><span className="brand-icon"><Dumbbell size={18} /></span><span>gym<span>log</span></span></a><span className="local-pill"><i /> Local</span></header>
-      <div className="page-top"><div><div className="eyebrow">TU ENTRENAMIENTO · VUESTRO PROGRESO</div><h1>{nav.find(n => n.id === tab)?.label}</h1></div><div className="person-switch">{(['jorge', 'marta'] as Person[]).map(p => <button key={p} className={person === p ? 'chosen ' + p : ''} onClick={() => setPerson(p)}><span>{p === 'jorge' ? 'J' : 'M'}</span>{names[p]}</button>)}</div></div>
+      <header className="mobile-header"><a className="brand" href="#" onClick={e => { e.preventDefault(); setTab('home') }}><span className="brand-icon"><Dumbbell size={18} /></span><span>gym<span>log</span></span></a><span className="local-pill"><i /> {cloudEnabled ? 'Nube' : 'Local'}</span></header>
+      <div className="page-top"><div><div className="eyebrow">TU ENTRENAMIENTO · VUESTRO PROGRESO</div><h1>{nav.find(n => n.id === tab)?.label}</h1></div><div className="person-switch">{cloudEnabled
+        ? <button className={'chosen ' + person}><span>{person === 'jorge' ? 'J' : 'M'}</span>{names[person]}</button>
+        : (['jorge', 'marta'] as Person[]).map(p => <button key={p} className={person === p ? 'chosen ' + p : ''} onClick={() => setPerson(p)}><span>{p === 'jorge' ? 'J' : 'M'}</span>{names[p]}</button>)}</div></div>
 
       {tab === 'home' && <section className="page-content">
         <div className="welcome-card"><div><span className="eyebrow">HOLA, {names[person].toUpperCase()}</span><h2>Hoy cuenta.<br /><em>Vamos a por ello.</em></h2><p>Tu progreso, sesión a sesión.</p><button className="primary-btn" onClick={() => start(person)}><Dumbbell size={17} /> Empezar entrenamiento</button></div><div className="welcome-art"><div className="art-ring"><Dumbbell size={64} /></div><span>01 / CONSTANCIA</span></div></div>
@@ -200,7 +232,7 @@ export default function App() {
       {tab === 'goals' && <section className="page-content"><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">OBJETIVOS PERSONALES</span><h2>Tu siguiente reto</h2></div><Target size={23} /></div><div className="form-grid"><label className="wide">Objetivo<input value={goal} onChange={e => setGoal(e.target.value)} placeholder="Ej. Entrenar 3 veces por semana" /></label><label>Meta numérica<input type="number" min="1" value={goalTarget} onChange={e => setGoalTarget(e.target.value)} /></label></div><button className="primary-btn" onClick={createGoal}><Plus size={16} /> Añadir objetivo</button></div>
         <div className="goal-list">{data.goals.filter(g => g.person === person).map(g => <div className="panel goal-card" key={g.id}><div><span className="eyebrow">{names[g.person].toUpperCase()}</span><h3>{g.title}</h3><p>{g.current} / {g.target} avances</p></div><div className="goal-actions"><div className="goal-progress"><i style={{ width: Math.min(100, g.current / g.target * 100) + '%' }} /></div><button className="small-btn" onClick={() => setData(d => ({ ...d, goals: d.goals.map(x => x.id === g.id ? { ...x, current: Math.min(x.target, x.current + 1) } : x) }))}>+1 progreso</button><button className="icon-btn" onClick={() => setData(d => ({ ...d, goals: d.goals.filter(x => x.id !== g.id) }))}><Trash2 size={15} /></button></div></div>)}</div>{!data.goals.some(g => g.person === person) && <Empty title="Sin objetivos activos" text="Añade una meta para mantener el rumbo." />}</section>}
 
-      {tab === 'profile' && <section className="page-content"><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">DATOS Y PRIVACIDAD</span><h2>Perfil de {names[person]}</h2></div><HeartPulse size={22} /></div><p className="helper">Los datos de esta beta se guardan en este dispositivo. Aún no hay cuentas ni sincronización en la nube: el selector de perfil no sustituye un inicio de sesión.</p><div className="data-summary"><b>{workouts.length} entrenamientos</b><b>{sets.length} series</b><b>{data.routines.filter(r => r.owner === person || r.owner === 'shared').length} rutinas visibles</b></div><button className="outline-btn" onClick={exportCsv}><ArrowDownToLine size={16} /> Exportar series a CSV</button></div><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO FÍSICO</span><h2>Mediciones corporales</h2></div><Activity size={22} /></div><div className="input-row"><label>Peso (kg)<input type="number" min="0" step="0.1" value={metricWeight} onChange={e => setMetricWeight(e.target.value)} placeholder="70.0" /></label><label>Cintura (cm)<input type="number" min="0" step="0.5" value={metricWaist} onChange={e => setMetricWaist(e.target.value)} placeholder="80" /></label></div><button className="primary-btn" onClick={addMetric}><Save size={16} /> Guardar medición</button><div className="history-sets">{data.metrics.filter(m => m.person === person).slice().reverse().slice(0,5).map(m => <span key={m.id}>{fmt(m.date)} · {m.weight ? m.weight + ' kg' : '—'} · {m.waist ? m.waist + ' cm cintura' : '—'}</span>)}</div></div><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">RECUPERACIÓN</span><h2>¿Cómo te encuentras?</h2></div><HeartPulse size={22} /></div><div className="input-row"><label>Horas de sueño<input type="number" min="0" max="24" step="0.5" value={sleep} onChange={e => setSleep(e.target.value)} /></label><label>Sensaciones<select value={feeling} onChange={e => setFeeling(e.target.value)}><option value="1">1 · Muy mal</option><option value="2">2 · Mal</option><option value="3">3 · Normal</option><option value="4">4 · Bien</option><option value="5">5 · Muy bien</option></select></label></div><label>Fatiga (1–10)<input type="number" min="1" max="10" value={fatigue} onChange={e => setFatigue(e.target.value)} /></label><label>Notas<textarea value={recoveryNote} onChange={e => setRecoveryNote(e.target.value)} placeholder="Agujetas, energía, molestias..." /></label><button className="primary-btn" onClick={addRecovery}><HeartPulse size={16} /> Registrar recuperación</button><div className="history-sets">{data.recovery.filter(r => r.person === person).slice(0,5).map(r => <span key={r.id}>{fmt(r.date)} · {r.sleep} h sueño · sensaciones {r.feeling}/5 · fatiga {r.fatigue}/10</span>)}</div></div><div className="danger-zone"><div><b>Datos de este dispositivo</b><small>Exporta una copia antes de borrar los datos locales.</small></div><button className="outline-btn danger" onClick={() => { if (window.confirm('¿Borrar todos los datos guardados en este dispositivo?')) { localStorage.removeItem(KEY); setData(seed); setNotice('Datos locales reiniciados') } }}>Borrar datos</button></div></section>}
+      {tab === 'profile' && <section className="page-content"><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">DATOS Y PRIVACIDAD</span><h2>Perfil de {names[person]}</h2></div><HeartPulse size={22} /></div><p className="helper">{cloudEnabled ? 'Tus datos personales se sincronizan con Supabase. En los entrenamientos conjuntos, cada serie se guarda en el perfil de quien la realiza.' : 'Los datos de esta beta se guardan en este dispositivo. Aún no hay cuentas ni sincronización en la nube: el selector de perfil no sustituye un inicio de sesión.'}</p><div className="data-summary"><b>{workouts.length} entrenamientos</b><b>{sets.length} series</b><b>{data.routines.filter(r => r.owner === person || r.owner === 'shared').length} rutinas visibles</b></div><button className="outline-btn" onClick={exportCsv}><ArrowDownToLine size={16} /> Exportar series a CSV</button>{cloudEnabled && onSignOut && <button className="outline-btn" onClick={onSignOut}>Cerrar sesión</button>}</div><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">SEGUIMIENTO FÍSICO</span><h2>Mediciones corporales</h2></div><Activity size={22} /></div><div className="input-row"><label>Peso (kg)<input type="number" min="0" step="0.1" value={metricWeight} onChange={e => setMetricWeight(e.target.value)} placeholder="70.0" /></label><label>Cintura (cm)<input type="number" min="0" step="0.5" value={metricWaist} onChange={e => setMetricWaist(e.target.value)} placeholder="80" /></label></div><button className="primary-btn" onClick={addMetric}><Save size={16} /> Guardar medición</button><div className="history-sets">{data.metrics.filter(m => m.person === person).slice().reverse().slice(0,5).map(m => <span key={m.id}>{fmt(m.date)} · {m.weight ? m.weight + ' kg' : '—'} · {m.waist ? m.waist + ' cm cintura' : '—'}</span>)}</div></div><div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">RECUPERACIÓN</span><h2>¿Cómo te encuentras?</h2></div><HeartPulse size={22} /></div><div className="input-row"><label>Horas de sueño<input type="number" min="0" max="24" step="0.5" value={sleep} onChange={e => setSleep(e.target.value)} /></label><label>Sensaciones<select value={feeling} onChange={e => setFeeling(e.target.value)}><option value="1">1 · Muy mal</option><option value="2">2 · Mal</option><option value="3">3 · Normal</option><option value="4">4 · Bien</option><option value="5">5 · Muy bien</option></select></label></div><label>Fatiga (1–10)<input type="number" min="1" max="10" value={fatigue} onChange={e => setFatigue(e.target.value)} /></label><label>Notas<textarea value={recoveryNote} onChange={e => setRecoveryNote(e.target.value)} placeholder="Agujetas, energía, molestias..." /></label><button className="primary-btn" onClick={addRecovery}><HeartPulse size={16} /> Registrar recuperación</button><div className="history-sets">{data.recovery.filter(r => r.person === person).slice(0,5).map(r => <span key={r.id}>{fmt(r.date)} · {r.sleep} h sueño · sensaciones {r.feeling}/5 · fatiga {r.fatigue}/10</span>)}</div></div><div className="danger-zone"><div><b>Datos de este dispositivo</b><small>Exporta una copia antes de borrar los datos locales.</small></div><button className="outline-btn danger" onClick={() => { if (window.confirm('¿Borrar todos los datos guardados en este dispositivo?')) { localStorage.removeItem(KEY); setData(seed); setNotice('Datos locales reiniciados') } }}>Borrar datos</button></div></section>}
 
       <footer className="page-footer"><span>GYMLOG · BETA</span><span><Save size={13} /> Guardado automático en este dispositivo</span></footer>
     </main>
