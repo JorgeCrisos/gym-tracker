@@ -29,6 +29,21 @@ function load(): AppData {
 }
 function fmt(date: string) { return new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) }
 function vol(sets: SetEntry[]) { return sets.reduce((sum, s) => sum + s.weight * s.reps, 0) }
+function muscleGroup(name: string): string {
+  const n = name.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  if (/sentadilla|prensa|extension de cuadriceps|zancada|step up/.test(n)) return 'Cuádriceps'
+  if (/hip thrust|gluteo|abduccion de cadera|patada de gluteo/.test(n)) return 'Glúteos'
+  if (/peso muerto|curl femoral|rumano|buenos dias/.test(n)) return 'Isquiosurales'
+  if (/press banca|press inclinado|apertura|flexiones|peck deck/.test(n)) return 'Pecho'
+  if (/remo|jalon|dominada|pull.?down/.test(n)) return 'Espalda'
+  if (/press militar|elevacion lateral|face pull|pajaro|hombro/.test(n)) return 'Hombros'
+  if (/curl.*biceps|biceps|martillo/.test(n)) return 'Bíceps'
+  if (/triceps|extension de codo|press frances/.test(n)) return 'Tríceps'
+  if (/plancha|abdominal|crunch|dead bug|pallof/.test(n)) return 'Core'
+  if (/gemelo|soleo|elevacion de talones/.test(n)) return 'Gemelos'
+  return 'Otros'
+}
+function estimatedOneRepMax(weight: number, reps: number) { return reps <= 1 ? weight : weight * (1 + Math.min(reps, 12) / 30) }
 
 export default function App() {
   const [data, setData] = useState<AppData>(load)
@@ -67,6 +82,16 @@ export default function App() {
     workouts.forEach(w => w.sets.filter(s => s.person === person).forEach(s => best.set(s.exercise, Math.max(best.get(s.exercise) || 0, s.weight))))
     return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
   }, [workouts, person])
+  const oneRepMax = useMemo(() => {
+    const best = new Map<string, number>()
+    sets.forEach(s => best.set(s.exercise, Math.max(best.get(s.exercise) || 0, estimatedOneRepMax(s.weight, s.reps))))
+    return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
+  }, [sets])
+  const muscleVolumes = useMemo(() => {
+    const totals = new Map<string, number>()
+    sets.forEach(s => { const group = muscleGroup(s.exercise); totals.set(group, (totals.get(group) || 0) + s.weight * s.reps) })
+    return Array.from(totals.entries()).sort((a, b) => b[1] - a[1])
+  }, [sets])
 
   function start(next: Mode) {
     const people: Person[] = next === 'together' ? ['jorge', 'marta'] : [next]
@@ -167,6 +192,8 @@ export default function App() {
 
       {tab === 'stats' && <section className="page-content"><div className="metric-grid"><Metric label="SESIONES" value={String(workouts.length)} detail="Histórico" /><Metric label="VOLUMEN" value={Math.round(totalVolume).toLocaleString('es-ES') + ' kg'} detail="Peso × repeticiones" /><Metric label="SERIES" value={String(sets.length)} detail="Completadas" /></div>
         <div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">FUERZA</span><h2>Mejores pesos por ejercicio</h2></div><Trophy size={21} /></div>{records.length ? <div className="bar-list">{records.map(([name, value]) => <div className="bar-item" key={name}><div><b>{name}</b><strong>{value} kg</strong></div><div className="bar-track"><i style={{ width: (value / Math.max(...records.map(x => x[1])) * 100) + '%' }} /></div></div>)}</div> : <Empty title="Todavía no hay marcas" text="Registra tus primeras series para ver tus progresos." />}</div>
+        <div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">ESTIMACIÓN</span><h2>1RM estimado por ejercicio</h2></div><Trophy size={21} /></div>{oneRepMax.length ? <div className="bar-list">{oneRepMax.map(([name, value]) => <div className="bar-item" key={name}><div><b>{name}</b><strong>{value.toFixed(1)} kg</strong></div></div>)}</div> : <Empty title="Sin estimaciones" text="Añade series con peso y repeticiones." />}</div>
+        <div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">GRUPOS MUSCULARES</span><h2>Volumen registrado</h2></div><Activity size={21} /></div>{muscleVolumes.length ? <div className="bar-list">{muscleVolumes.map(([name, value]) => <div className="bar-item" key={name}><div><b>{name}</b><strong>{Math.round(value).toLocaleString('es-ES')} kg</strong></div><div className="bar-track"><i style={{ width: (value / Math.max(...muscleVolumes.map(x => x[1])) * 100) + '%' }} /></div></div>)}</div> : <Empty title="Sin datos musculares" text="Registra tus ejercicios para ver el volumen por grupo muscular. Los ejercicios no reconocidos se agrupan en Otros." />}</div>
         <div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">EVOLUCIÓN</span><h2>Volumen por sesión</h2></div><BarChart3 size={21} /></div>{workouts.length ? <div className="volume-bars">{workouts.slice(0, 8).reverse().map(w => <div className="volume-column" key={w.id}><div style={{ height: Math.max(5, vol(w.sets.filter(s => s.person === person)) / Math.max(1, ...workouts.map(x => vol(x.sets.filter(s => s.person === person)))) * 100) + '%' }} /><small>{new Date(w.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</small></div>)}</div> : <Empty title="Sin datos todavía" text="La gráfica se irá completando con cada entrenamiento." />}</div>
       </section>}
 
