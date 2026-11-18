@@ -119,7 +119,6 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
   }, [sets])
   const recentMuscles = useMemo(() => { const since=Date.now()-30*86400000; return Array.from(new Set(workouts.filter(w=>new Date(w.date+'T23:59:59').getTime()>=since).flatMap(w=>w.sets.filter(s=>s.person===person).flatMap(s=>muscleTargets(s.exercise))))) }, [workouts,person])
-  const recentMuscles = useMemo(() => { const since=Date.now()-30*86400000; return Array.from(new Set(workouts.filter(w=>new Date(w.date+'T23:59:59').getTime()>=since).flatMap(w=>w.sets.filter(s=>s.person===person).flatMap(s=>muscleTargets(s.exercise))))) }, [workouts,person])
   const muscleVolumes = useMemo(() => {
     const totals = new Map<string, number>()
     sets.forEach(s => { const group = muscleGroup(s.exercise); totals.set(group, (totals.get(group) || 0) + s.weight * s.reps) })
