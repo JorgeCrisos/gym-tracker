@@ -192,19 +192,9 @@ export default function CloudGate() {
     <button type="button" className="auth-switch" onClick={() => void supabase.auth.signOut()}>Cerrar sesión</button>
   </form></div>
 
-  if (bundle.members.length < 2) return <div className="auth-screen"><div className="auth-card">
-    <div className="auth-mark"><Users size={25} /></div><span className="eyebrow">GRUPO CREADO</span><h1>Invita a la otra persona</h1>
-    <p>Comparte este código con Marta/Jorge para que se una a vuestro espacio.</p>
-    <div className="invite-code">{bundle.group.invite_code}</div>
-    <button className="primary-btn" onClick={() => { void navigator.clipboard?.writeText(bundle.group.invite_code); setMessage('Código copiado') }}>Copiar código</button>
-    {message && <div className="auth-message">{message}</div>}
-    <button className="auth-switch" onClick={() => void loadGroup(session)}>Ya se ha unido · Actualizar</button>
-    <button className="auth-switch" onClick={() => void supabase.auth.signOut()}>Cerrar sesión</button>
-  </div></div>
-
   return <App initialData={bundle.initialData} currentPerson={bundle.person}
     partnerPerson={bundle.partner ? asPerson(bundle.partner.display_name) : null}
-    partnerUserId={bundle.partner?.user_id ?? null} cloudEnabled
+    partnerUserId={bundle.partner?.user_id ?? null} groupInviteCode={bundle.group.invite_code} cloudEnabled
     onWorkoutSave={saveWorkout} onProfileSave={saveProfile}
     onSignOut={() => { void supabase.auth.signOut() }} />
 }
