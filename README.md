@@ -28,7 +28,7 @@ La conexión de producción de Supabase está configurada en `app/src/lib/supaba
 ## Despliegue
 El workflow `.github/workflows/deploy-pages.yml` compila `app/` y publica `dist/` en GitHub Pages al hacer push en `develop`. El build de validación está en `.github/workflows/build.yml`.
 
-En el repositorio, GitHub Pages debe tener la fuente de publicación configurada como **GitHub Actions** en Settings → Pages. El repositorio es privado: la disponibilidad de Pages depende del plan de GitHub asociado.
+El repositorio es público y GitHub Pages se publica mediante GitHub Actions. En Settings → Pages, la fuente debe estar configurada como **GitHub Actions**.
 
 ## Configuración de las dos cuentas
 1. Cada persona crea su propia cuenta con su correo en GymLog.
