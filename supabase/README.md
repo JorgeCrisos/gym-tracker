@@ -33,5 +33,10 @@ This allowlist is required for the email-confirmation link to return to the app.
 3. Register the second account and join using the code, selecting the remaining profile name.
 4. Reload the first account after the second member joins.
 
+## Tests already executed
+- Transactional test of the joint-save RPC: both test accounts received only their own set payload; transaction rolled back.
+- Transactional RLS isolation test: each of two synthetic authenticated users saw exactly one own `member_data` row; transaction rolled back.
+- Supabase advisors no longer report anonymous execution of the SECURITY DEFINER RPCs. Remaining SECURITY DEFINER warnings apply to the authenticated RPCs intentionally used by the app.
+
 ## Before real use
 Complete the two-account tests in `supabase/tests/ACCEPTANCE_TEST_PLAN.md`. Supabase Auth currently has leaked-password protection disabled; enable it in the project's Auth password-security settings when available. The app has not yet completed a live end-to-end test with two user accounts.
