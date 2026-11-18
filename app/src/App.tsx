@@ -39,7 +39,7 @@ export default function App() {
   const [reps, setReps] = useState('10')
   const [rpe, setRpe] = useState('7')
   const [rest, setRest] = useState('90')
-  const [setPerson, setSetPerson] = useState<Person>('jorge')
+  const [activeSetPerson, setSetPerson] = useState<Person>('jorge')
   const [routineName, setRoutineName] = useState('')
   const [routineExercises, setRoutineExercises] = useState('Sentadilla, Press banca, Remo')
   const [routineOwner, setRoutineOwner] = useState<Person | 'shared'>('jorge')
@@ -76,7 +76,7 @@ export default function App() {
   }
   function addSet() {
     if (!data.active) return
-    const p = data.active.people.includes(setPerson) ? setPerson : data.active.people[0]
+    const p = data.active.people.includes(activeSetPerson) ? activeSetPerson : data.active.people[0]
     const entry: SetEntry = { id: uid(), exercise: exercise.trim() || 'Ejercicio', person: p, weight: Math.max(0, Number(weight) || 0), reps: Math.max(0, Number(reps) || 0), rpe: Math.min(10, Math.max(1, Number(rpe) || 7)), rest: Math.max(0, Number(rest) || 0) }
     setData(d => d.active ? { ...d, active: { ...d.active, sets: [...d.active.sets, entry] } } : d)
     setTimer(entry.rest); setRunning(true); setNotice('Serie guardada · ' + names[p])
