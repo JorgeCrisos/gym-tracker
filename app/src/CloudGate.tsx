@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { Activity, Dumbbell, LockKeyhole, Users } from 'lucide-react'
+import { Dumbbell, LockKeyhole, Users } from 'lucide-react'
 import App, { type AppData, type Person, type Workout } from './App'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
@@ -64,17 +64,20 @@ export default function CloudGate() {
       ])
       if (memberError) throw memberError
       if (sharedError) throw sharedError
-      const body = (memberData?.body_data ?? {}) as Record<string, any>
+      const body = (memberData?.body_data ?? {}) as {
+        personal_routines?: AppData['routines']; goals?: AppData['goals'];
+        metrics?: AppData['metrics']; recovery?: AppData['recovery']
+      }
       const workouts = Array.isArray(memberData?.workouts) ? memberData.workouts as Workout[] : []
-      const sharedRoutines = Array.isArray(sharedData?.routines) ? sharedData.routines.map((r: any) => ({ ...r, owner: 'shared' as const })) : []
-      const personalRoutines = Array.isArray(body.personal_routines) ? body.personal_routines.map((r: any) => ({ ...r, owner: person })) : []
+      const sharedRoutines = Array.isArray(sharedData?.routines) ? (sharedData.routines as AppData['routines']).map(r => ({ ...r, owner: 'shared' as const })) : []
+      const personalRoutines = Array.isArray(body.personal_routines) ? body.personal_routines.map(r => ({ ...r, owner: person })) : []
       const initialData: AppData = {
         ...blankData(),
         workouts,
         routines: [...personalRoutines, ...sharedRoutines],
-        goals: Array.isArray(body.goals) ? body.goals.map((g: any) => ({ ...g, person })) : [],
-        metrics: Array.isArray(body.metrics) ? body.metrics.map((m: any) => ({ ...m, person })) : [],
-        recovery: Array.isArray(body.recovery) ? body.recovery.map((r: any) => ({ ...r, person })) : []
+        goals: Array.isArray(body.goals) ? body.goals.map(g => ({ ...g, person })) : [],
+        metrics: Array.isArray(body.metrics) ? body.metrics.map(m => ({ ...m, person })) : [],
+        recovery: Array.isArray(body.recovery) ? body.recovery.map(r => ({ ...r, person })) : []
       }
       setBundle({ group: group as GroupInfo, members: (members ?? []) as GroupMember[], person, partner, initialData })
     } catch (e) {
@@ -132,11 +135,18 @@ export default function CloudGate() {
       recovery: data.recovery.filter(r => r.person === bundle.person),
       personal_routines: data.routines.filter(r => r.owner === bundle.person)
     }
-    const { error: memberError } = await supabase.from('member_data').upsert({
-      group_id: bundle.group.id, user_id: session.user.id,
-      display_name: bundle.person === 'jorge' ? 'Jorge' : 'Marta', body_data
-    }, { onConflict: 'group_id,user_id' })
-    if (memberError) throw memberError
+    const { data: existing, error: lookupError } = await supabase.from('member_data')
+      .select('user_id').eq('group_id', bundle.group.id).eq('user_id', session.user.id).maybeSingle()
+    if (lookupError) throw lookupError
+    const memberPayload = { body_data, updated_at: new Date().toISOString() }
+    const memberWrite = existing
+      ? await supabase.from('member_data').update(memberPayload).eq('group_id', bundle.group.id).eq('user_id', session.user.id)
+      : await supabase.from('member_data').insert({
+          group_id: bundle.group.id, user_id: session.user.id,
+          display_name: bundle.person === 'jorge' ? 'Jorge' : 'Marta',
+          workouts: [], body_data
+        })
+    if (memberWrite.error) throw memberWrite.error
     const { error: sharedError } = await supabase.from('shared_data')
       .update({ routines: data.routines.filter(r => r.owner === 'shared') })
       .eq('group_id', bundle.group.id)
