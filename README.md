@@ -19,7 +19,9 @@ Nueva aplicación PWA de entrenamiento para dos personas, con registro individua
 4. Ejecuta npm run dev.
 5. Para comprobar la compilación, ejecuta npm run build.
 
-La configuración de Supabase todavía no está conectada. No pegues claves privadas ni service_role en el frontend.
+La versión actual incluye registro de sesiones individuales y conjuntas, series con carga/repeticiones/RPE/descanso, temporizador, rutinas editables, historial, estadísticas básicas, objetivos, seguimiento de peso/cintura y recuperación. Los datos se guardan automáticamente en localStorage del dispositivo; no hay todavía autenticación ni sincronización entre móviles. El selector Jorge/Marta es una separación funcional local, no una barrera de seguridad. No guardes datos sensibles de ambos en un dispositivo compartido hasta activar Auth y RLS.
+
+El esquema propuesto de Supabase está en supabase/migrations. Está versionado para revisión, pero NO se ha ejecutado en ningún proyecto. No pegues claves privadas ni service_role en el frontend.
 
 ## Despliegue Netlify
 - Build command: npm run build
