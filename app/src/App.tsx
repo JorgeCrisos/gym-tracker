@@ -288,6 +288,16 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
 function ExerciseThumb({name}:{name:string}) { const group=muscleGroup(name); const lower=['Cuádriceps','Glúteos','Isquiosurales','Gemelos'].includes(group); const back=['Espalda','Isquiosurales'].includes(group); return <span className={'exercise-thumb '+(lower?'lower':'upper')} aria-hidden="true"><svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d={lower?'M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28':'M23 19 L24 33 L17 46 M24 33 L32 46 M24 23 L12 28 M24 23 L37 28'}/><path d={back?'M45 16 L62 16 M48 12 L48 20 M59 12 L59 20':'M42 27 L64 27 M45 22 L45 32 M61 22 L61 32'}/><path d="M38 8 L38 46" className="thumb-equipment"/></svg></span> }
 function BodyMap({active}:{active:string[]}) {
+ const [angle,setAngle]=useState(0);
+ const [dragging,setDragging]=useState(false);
+ const [lastX,setLastX]=useState(0);
+ const normalized=((angle%360)+360)%360;
+ const isBack=normalized>90&&normalized<270;
+ const radians=normalized*Math.PI/180;
+ const widthFactor=Math.max(.16,Math.abs(Math.cos(radians)));
+ const beginDrag=(e:React.PointerEvent<HTMLDivElement>)=>{setDragging(true);setLastX(e.clientX);e.currentTarget.setPointerCapture(e.pointerId)};
+ const moveDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(!dragging)return;const dx=e.clientX-lastX;setLastX(e.clientX);setAngle(v=>v+dx*.9)};
+ const endDrag=()=>setDragging(false);
  const part=(id:string)=>active.includes(id)?'url(#muscleActive)':'url(#muscleBase)';
  const line='#9A817A';
  const view=(back:boolean)=><svg viewBox="0 0 180 330" role="img" aria-label={back?'Anatomía posterior':'Anatomía frontal'} className="anatomy-figure">
@@ -324,7 +334,22 @@ function BodyMap({active}:{active:string[]}) {
   </g>
  </svg>;
  const labels:Record<string,string>={chest:'Pecho',shoulders:'Hombros',biceps:'Bíceps',triceps:'Tríceps',upperback:'Espalda alta',lowerback:'Lumbar',abs:'Abdominales',glutes:'Glúteos',quads:'Cuádriceps',hamstrings:'Isquiosurales',calves:'Gemelos',forearms:'Antebrazos'};
- return <div className="body-map-v2"><div className="anatomy-views"><div className="anatomy-side">{view(false)}<b>FRONTAL</b></div><div className="anatomy-side">{view(true)}<b>POSTERIOR</b></div></div><div className="muscle-key"><strong>{active.length?'MÚSCULOS TRABAJADOS':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{labels[id]||id}</span>):<small>Selecciona ejercicios para resaltar las zonas implicadas.</small>}</div><small>Rosa: músculo implicado · Verde: resto del cuerpo</small></div></div>;
+ return <div className="body-map-v2 body-map-3d">
+  <div className="anatomy-stage" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
+   <div className="anatomy-model" style={{transform:`scaleX(${widthFactor}) rotateY(${normalized>90&&normalized<270?180:0}deg)`}}>
+    {view(isBack)}
+   </div>
+   <span className="anatomy-orientation">{isBack?'VISTA POSTERIOR':normalized>45&&normalized<135||normalized>225&&normalized<315?'VISTA LATERAL':'VISTA FRONTAL'}</span>
+   <span className="anatomy-hint">Arrastra para girar 360°</span>
+  </div>
+  <div className="anatomy-controls">
+   <button type="button" onClick={()=>setAngle(v=>v-45)} aria-label="Girar a la izquierda">↶</button>
+   <button type="button" onClick={()=>setAngle(0)}>Frontal</button>
+   <button type="button" onClick={()=>setAngle(180)}>Espalda</button>
+   <button type="button" onClick={()=>setAngle(v=>v+45)} aria-label="Girar a la derecha">↷</button>
+  </div>
+  <div className="muscle-key"><strong>{active.length?'MÚSCULOS TRABAJADOS':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{labels[id]||id}</span>):<small>Selecciona ejercicios para resaltar las zonas implicadas.</small>}</div><small>Rosa: músculo implicado · Verde: resto del cuerpo</small></div>
+ </div>;
 }
 function BodyStats({metrics,heightCm,age,sex,targetWeight}:{metrics:Metric[];heightCm:number;age:number;sex:'male'|'female';targetWeight:number}) {
  const latest=metrics.filter(m=>m.weight>0).slice().sort((a,b)=>b.date.localeCompare(a.date))[0]; const weight=latest?.weight??0; const bmi=weight&&heightCm?weight/((heightCm/100)**2):0; const bf=bodyFatEstimate(weight,heightCm,age,sex); const min=heightCm?18.5*((heightCm/100)**2):0; const max=heightCm?24.9*((heightCm/100)**2):0; const delta=weight&&targetWeight?weight-targetWeight:0;
