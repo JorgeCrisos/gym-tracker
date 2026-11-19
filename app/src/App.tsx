@@ -336,7 +336,7 @@ function exerciseImageId(name:string):string{
  if(/peso muerto/.test(n))return 'Barbell_Deadlift';
  if(/patada de triceps/.test(n))return 'Tricep_Dumbbell_Kickback';
  if(/press banca con mancuernas/.test(n))return 'Dumbbell_Bench_Press';
- if(/press inclinado con mancuernas/.test(n))return 'Incline_Dumbbell_Bench_Press';
+ if(/press inclinado con mancuernas/.test(n))return 'Incline_Dumbbell_Press';
  if(/press inclinado/.test(n))return 'Barbell_Incline_Bench_Press_-_Medium_Grip';
  if(/press banca|press declinado|press en maquina|fondos/.test(n))return 'Barbell_Bench_Press_-_Medium_Grip';
  if(/apertura con mancuernas/.test(n))return 'Dumbbell_Flyes';
@@ -349,7 +349,7 @@ function exerciseImageId(name:string):string{
  if(/face pull/.test(n))return 'Face_Pull';
  if(/remo con mancuerna/.test(n))return 'One-Arm_Dumbbell_Row';
  if(/remo|remo pendlay/.test(n))return 'Bent_Over_Barbell_Row';
- if(/jalon/.test(n))return 'Wide-Grip_Front_Lat_Pulldown';
+ if(/jalon/.test(n))return 'Wide-Grip_Lat_Pulldown';
  if(/dominada/.test(n))return 'Pullups';
  if(/curl martillo/.test(n))return 'Hammer_Curls';
  if(/curl predicador|curl scott/.test(n))return 'Preacher_Curl';
