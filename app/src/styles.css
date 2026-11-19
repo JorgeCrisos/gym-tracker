@@ -153,3 +153,41 @@ body{background:radial-gradient(ellipse at 85% 0%,#E5F0E9 0%,transparent 40%),#F
 .exercise-thumb{width:58px!important;height:50px!important}
 .exercise-thumb svg{width:52px!important;height:44px!important}
 @media(max-width:680px){.body-map-v2{grid-template-columns:1fr!important;gap:8px!important;padding:9px!important}.anatomy-figure{max-height:190px!important;max-width:122px!important}.muscle-key>div{display:grid!important;grid-template-columns:1fr 1fr!important}.exercise-options{max-height:340px!important}}
+
+
+/* GymLog pastel redesign + seven-section navigation */
+:root{--lime:#B8DCCB;--muted:#82958B;--panel:#FFFEFC;--line:#E3EAE5;--pink:#D99BB3;color-scheme:light}
+body{background:linear-gradient(145deg,#F8FAF7 0%,#F5F1F4 55%,#F2F7F3 100%);color:#35483F}
+.sidebar{background:#F9FBF8;border-color:#E3EAE5}
+.brand{color:#35483F}.brand-icon{background:#D8EBDD;color:#4F7666}
+.side-label{color:#8B9B91}.nav-item{color:#71847A}.nav-item:hover{background:#EEF5F0;color:#40584C}.nav-item.active{color:#527C69;background:#E5F1E9;border-color:#D1E5D8}
+.main{color:#35483F}.page-top h1,.section-title h2,.panel-heading h2,.panel h2,.panel h3{color:#35483F}
+.eyebrow{color:#78998A}.panel,.metric-card,.session-row,.routine-card,.create-panel,.chart-panel,.sets-panel,.log-panel{background:#FFFEFC;border-color:#E2EAE4;box-shadow:0 8px 26px rgba(86,112,96,.045)}
+.helper,.muted-count,.page-footer,.session-detail small,.metric-card small{color:#87968D}
+input,select,textarea{background:#F8FAF8!important;color:#35483F!important;border-color:#DCE6DF!important}
+.primary-btn,.finish-btn{background:#C9E8D5!important;color:#345344!important;border-color:#C9E8D5!important}
+.outline-btn,.timer-actions button,.small-btn{background:#F4F8F5!important;color:#587466!important;border-color:#DCE7E0!important}
+.count-badge,.set-number,.person-bubble{background:#E6F1E9!important;color:#527765!important}
+.active-banner{background:#EDF6EF;border-color:#D5E7D9;color:#4F7563}
+.active-banner i{background:#8AB99D}
+.exercise-options{background:#FFFEFC;border-color:#DCE7E0;box-shadow:0 14px 35px rgba(60,85,70,.12)}
+.exercise-option{border-color:#EEF2EE;color:#40564A}
+.exercise-option:hover,.exercise-option.selected{background:#F0F7F2}
+.exercise-thumb{background:linear-gradient(140deg,#E5F1E9,#F6EAF0)!important}
+.exercise-thumb svg{stroke:#789A88;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.exercise-thumb svg circle{fill:#D99BB3;stroke:#B77E99}
+.timer-box{background:#F7FAF7;border-color:#E3EAE5}
+.toast{background:#EAF4ED;border-color:#CFE3D5;color:#456552}
+.mobile-header{border-color:#E3EAE5}
+.mobile-nav{background:rgba(250,252,250,.96)!important;border-color:#E0E9E2!important;box-shadow:0 -8px 24px rgba(70,90,76,.07)}
+.mobile-nav button{color:#87978D}.mobile-nav button.active{color:#648D78}
+.body-map-v2{background:linear-gradient(145deg,#F7FAF7,#F9F1F5)!important;border-color:#E6E9E5!important}
+.anatomy-figure{filter:drop-shadow(0 4px 5px rgba(118,91,87,.12))}
+.history-filter{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.previous-load{margin-bottom:14px;background:linear-gradient(120deg,#EEF6F0,#FBF1F5)}
+.previous-load h2{font-size:28px;margin:7px 0}
+.trend-bars{display:flex;align-items:flex-end;gap:clamp(5px,2vw,16px);min-height:210px;padding:18px 4px 0;overflow-x:auto}
+.trend-column{min-width:42px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-height:185px}
+.trend-bar{width:min(34px,75%);min-height:4px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,#D99BB3,#B8DCCB)}
+.trend-column small{font-size:9px;color:#819188;white-space:nowrap}.trend-column b{font-size:9px;color:#60796B;white-space:nowrap}
+@media(max-width:680px){.mobile-nav{gap:0;padding:7px 2px calc(7px + env(safe-area-inset-bottom))!important}.mobile-nav button{min-width:0;gap:3px}.mobile-nav small{font-size:7px;letter-spacing:-.2px}.history-filter{grid-template-columns:1fr}.anatomy-figure{max-height:260px!important;max-width:155px!important}.body-map-v2{grid-template-columns:1fr!important}.anatomy-views{grid-template-columns:1fr 1fr!important}.muscle-key>div{display:grid!important;grid-template-columns:1fr 1fr!important}}
