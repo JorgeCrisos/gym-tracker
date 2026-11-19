@@ -154,8 +154,8 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
       const partnerWorkout = a.mode === 'together' && partnerPerson && partnerUserId
         ? { ...workout, people: [partnerPerson], sets: workout.sets.filter(s => s.person === partnerPerson) }
         : null
-      if (!ownWorkout.sets.length) { setNotice('Añade al menos una serie de tu perfil'); return }
-      if (a.mode === 'together' && (!partnerWorkout || !partnerWorkout.sets.length)) { setNotice('Faltan series de la otra persona'); return }
+      if (!ownWorkout.sets.length) { setNotice('Añade al menos una serie de tu perfil'); setFinishing(false); return }
+      if (a.mode === 'together' && (!partnerWorkout || !partnerWorkout.sets.length)) { setNotice('Faltan series de la otra persona'); setFinishing(false); return }
       try { await onWorkoutSave(ownWorkout, partnerWorkout) }
       catch (e) { setNotice('Error al sincronizar: '+(e instanceof Error?e.message:'revisa tu conexión')); setFinishing(false); return }
       setData(d => ({ ...d, workouts: [ownWorkout, ...d.workouts], active: null }))
