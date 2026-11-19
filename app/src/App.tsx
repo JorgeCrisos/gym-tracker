@@ -310,6 +310,22 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
 
 function ExerciseThumb({name}:{name:string}) { const group=muscleGroup(name); const lower=['Cuádriceps','Glúteos','Isquiosurales','Gemelos'].includes(group); const back=['Espalda','Isquiosurales'].includes(group); return <span className={'exercise-thumb '+(lower?'lower':'upper')} aria-hidden="true"><svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d={lower?'M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28':'M23 19 L24 33 L17 46 M24 33 L32 46 M24 23 L12 28 M24 23 L37 28'}/><path d={back?'M45 16 L62 16 M48 12 L48 20 M59 12 L59 20':'M42 27 L64 27 M45 22 L45 32 M61 22 L61 32'}/><path d="M38 8 L38 46" className="thumb-equipment"/></svg></span> }
+function paintMuscleGroups(root:THREE.Object3D, groups:Set<string>){
+ root.traverse(object=>{
+  if(!(object instanceof THREE.Mesh))return;
+  const info=object.userData as {kind?:string;group?:string};
+  if(info.kind!=='muscle')return;
+  const materials=Array.isArray(object.material)?object.material:[object.material];
+  materials.forEach(material=>{
+   if(material instanceof THREE.MeshStandardMaterial){
+    const selected=!!info.group&&groups.has(info.group);
+    material.color.set(selected?'#D783A5':'#C5D8CC');
+    material.emissive.set(selected?'#8C3F60':'#000000');
+    material.emissiveIntensity=selected?0.16:0;
+   }
+  });
+ });
+}
 function BodyMap({active}:{active:string[]}) {
  const mountRef=useRef<HTMLDivElement>(null);
  const [loading,setLoading]=useState(true);
@@ -317,6 +333,8 @@ function BodyMap({active}:{active:string[]}) {
  const controlsRef=useRef<OrbitControls|null>(null);
  const modelRef=useRef<THREE.Group|null>(null);
  const activeKey=active.join('|');
+ const activeKeyRef=useRef(activeKey);
+ activeKeyRef.current=activeKey;
  useEffect(()=>{
   const mount=mountRef.current;
   if(!mount)return;
@@ -384,8 +402,8 @@ function BodyMap({active}:{active:string[]}) {
     }
    });
    scene.add(model);
-   const radius=Math.max(1.35,maxDim*scale*1.7);
-   camera.position.set(0,0.15,radius*2.7);
+   paintMuscleGroups(model,new Set(activeKeyRef.current?activeKeyRef.current.split('|'):[]));
+   camera.position.set(0,0.15,4.25);
    camera.near=0.01;camera.far=100;camera.updateProjectionMatrix();
    controls.target.set(0,0,0);controls.update();
    setLoading(false);
@@ -409,26 +427,12 @@ function BodyMap({active}:{active:string[]}) {
  useEffect(()=>{
   const model=modelRef.current;
   if(!model)return;
-  const selected=new Set(activeKey?activeKey.split('|'):[]);
-  model.traverse(object=>{
-   if(!(object instanceof THREE.Mesh))return;
-   const info=object.userData as {kind?:string;group?:string};
-   if(info.kind!=='muscle')return;
-   const mats=Array.isArray(object.material)?object.material:[object.material];
-   mats.forEach(material=>{
-    if(material instanceof THREE.MeshStandardMaterial){
-     const isActive=!!info.group&&selected.has(info.group);
-     material.color.set(isActive?'#D783A5':'#C5D8CC');
-     material.emissive.set(isActive?'#8C3F60':'#000000');
-     material.emissiveIntensity=isActive?0.16:0;
-    }
-   });
-  });
+  paintMuscleGroups(model,new Set(activeKey?activeKey.split('|'):[]));
  },[activeKey]);
  const setPreset=(preset:'front'|'back'|'side')=>{
   const controls=controlsRef.current;
   if(!controls)return;
-  const radius=4.2;
+  const radius=4.25;
   const positions={front:new THREE.Vector3(0,0.15,radius),back:new THREE.Vector3(0,0.15,-radius),side:new THREE.Vector3(radius,0.15,0)};
   controls.object.position.copy(positions[preset]);
   controls.target.set(0,0,0);controls.update();
