@@ -142,6 +142,19 @@ export default function CloudGate() {
     if (error) throw error
   }, [bundle])
 
+  const deleteWorkout = useCallback(async (workoutId: string) => {
+    if (!bundle || !session) throw new Error('No hay sesión autenticada')
+    const { data: row, error: readError } = await supabase.from('member_data')
+      .select('workouts').eq('group_id', bundle.group.id).eq('user_id', session.user.id).single()
+    if (readError) throw readError
+    const current = Array.isArray(row.workouts) ? row.workouts as Workout[] : []
+    const next = current.filter(workout => workout.id !== workoutId)
+    const { error: writeError } = await supabase.from('member_data')
+      .update({ workouts: next, updated_at: new Date().toISOString() })
+      .eq('group_id', bundle.group.id).eq('user_id', session.user.id)
+    if (writeError) throw writeError
+  }, [bundle, session])
+
   const saveProfile = useCallback(async (data: AppData) => {
     if (!bundle || !session) return
     const body_data = {
@@ -197,6 +210,6 @@ export default function CloudGate() {
   return <App initialData={bundle.initialData} currentPerson={bundle.person}
     partnerPerson={bundle.partner ? asPerson(bundle.partner.display_name) : null}
     partnerUserId={bundle.partner?.user_id ?? null} groupInviteCode={bundle.group.invite_code} cloudEnabled
-    onWorkoutSave={saveWorkout} onProfileSave={saveProfile}
+    onWorkoutSave={saveWorkout} onWorkoutDelete={deleteWorkout} onProfileSave={saveProfile}
     onSignOut={() => { void supabase.auth.signOut() }} />
 }
