@@ -278,16 +278,43 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
 function ExerciseThumb({name}:{name:string}) { const group=muscleGroup(name); const lower=['Cuádriceps','Glúteos','Isquiosurales','Gemelos'].includes(group); const back=['Espalda','Isquiosurales'].includes(group); return <span className={'exercise-thumb '+(lower?'lower':'upper')} aria-hidden="true"><svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d={lower?'M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28':'M23 19 L24 33 L17 46 M24 33 L32 46 M24 23 L12 28 M24 23 L37 28'}/><path d={back?'M45 16 L62 16 M48 12 L48 20 M59 12 L59 20':'M42 27 L64 27 M45 22 L45 32 M61 22 L61 32'}/><path d="M38 8 L38 46" className="thumb-equipment"/></svg></span> }
 function BodyMap({active}:{active:string[]}) {
- const part=(id:string)=>active.includes(id)?'#D88EAE':'#DDE8E0';
- const outline='#71877B';
- const view=(back:boolean)=><svg viewBox="0 0 150 250" role="img" aria-label={back?'Vista posterior del cuerpo':'Vista frontal del cuerpo'} className="anatomy-figure">
-  <defs><linearGradient id={back?'skinback':'skinfront'} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#F1DCCF"/><stop offset="1" stopColor="#E7C8B9"/></linearGradient></defs>
-  <circle cx="75" cy="24" r="13" fill={back ? "url(#skinback)" : "url(#skinfront)"} stroke={outline} strokeWidth="1.2"/>
-  <path d="M62 42 Q51 43 42 53 L31 91 Q28 101 35 105 L43 101 L52 75 L50 119 L48 164 L43 214 Q42 226 52 228 L60 226 L70 168 L75 132 L80 168 L90 226 L98 228 Q108 226 107 214 L102 164 L100 119 L98 75 L107 101 L115 105 Q122 101 119 91 L108 53 Q99 43 88 42Z" fill={back ? "url(#skinback)" : "url(#skinfront)"} stroke={outline} strokeWidth="1.6" strokeLinejoin="round"/>
-  {back?<><path d="M49 54 Q75 43 101 54 L93 91 Q75 104 57 91Z" fill={part('upperback')}/><path d="M58 94 Q75 102 92 94 L88 133 L62 133Z" fill={part('lowerback')}/><path d="M52 132 Q75 139 98 132 L96 153 Q75 165 54 153Z" fill={part('glutes')}/><path d="M52 155 L72 158 L67 207 L51 210Z" fill={part('hamstrings')}/><path d="M78 158 L98 155 L99 210 L83 207Z" fill={part('hamstrings')}/><path d="M51 211 L66 209 L62 226 L51 226Z M84 209 L99 211 L99 226 L88 226Z" fill={part('calves')}/><path d="M39 66 L49 72 L44 101 L36 98Z M101 72 L111 66 L114 98 L106 101Z" fill={part('triceps')}/><path d="M44 104 L51 105 L49 123 L42 121Z M99 105 L106 104 L108 121 L101 123Z" fill={part('forearms')}/></>:<><path d="M43 55 Q57 47 73 58 L72 83 Q57 89 48 78Z M77 58 Q93 47 107 55 L102 78 Q93 89 78 83Z" fill={part('shoulders')}/><path d="M49 77 Q75 69 101 77 L96 105 Q75 112 54 105Z" fill={part('chest')}/><path d="M57 108 Q75 114 93 108 L90 143 L60 143Z" fill={part('abs')}/><path d="M39 76 L48 82 L45 111 L37 108Z M102 82 L111 76 L113 108 L105 111Z" fill={part('biceps')}/><path d="M37 110 L45 111 L43 126 L35 123Z M105 111 L113 110 L115 123 L107 126Z" fill={part('forearms')}/><path d="M53 146 L72 146 L68 205 L51 205Z M78 146 L97 146 L99 205 L82 205Z" fill={part('quads')}/><path d="M51 207 L67 207 L63 226 L51 226Z M83 207 L99 207 L99 226 L87 226Z" fill={part('calves')}/></>}
+ const part=(id:string)=>active.includes(id)?'url(#muscleActive)':'url(#muscleBase)';
+ const line='#9A817A';
+ const view=(back:boolean)=><svg viewBox="0 0 180 330" role="img" aria-label={back?'Anatomía posterior':'Anatomía frontal'} className="anatomy-figure">
+  <defs>
+   <linearGradient id={back?'skinback':'skinfront'} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#F6E4D9"/><stop offset=".48" stopColor="#EACFC2"/><stop offset="1" stopColor="#DDBBAE"/></linearGradient>
+   <linearGradient id="muscleBase" x1="0" x2="1"><stop stopColor="#DCE9E1"/><stop offset="1" stopColor="#BFD3C7"/></linearGradient>
+   <linearGradient id="muscleActive" x1="0" x2="1"><stop stopColor="#E9AFC4"/><stop offset="1" stopColor="#CB7F9E"/></linearGradient>
+   <linearGradient id="shade" x1="0" x2="1"><stop stopColor="#FFFFFF" stopOpacity=".48"/><stop offset="1" stopColor="#9B6E65" stopOpacity=".14"/></linearGradient>
+  </defs>
+  <g stroke={line} strokeWidth="1.2" strokeLinejoin="round">
+   <path d="M69 37 Q61 30 62 18 Q63 5 90 5 Q117 5 118 18 Q119 30 111 37 L109 49 Q128 49 143 64 L160 119 Q164 133 153 138 Q145 141 140 130 L128 93 L126 146 Q125 160 128 177 L136 237 Q139 251 128 255 Q116 259 111 245 L96 184 L90 171 L84 184 L69 245 Q64 259 52 255 Q41 251 44 237 L52 177 Q55 160 54 146 L52 93 L40 130 Q35 141 27 138 Q16 133 20 119 L37 64 Q52 49 71 49Z" fill={back?'url(#skinback)':'url(#skinfront)'}/>
+   <path d="M69 37 Q90 45 111 37 L109 51 Q90 61 71 51Z" fill="url(#shade)" stroke="none"/>
+   {back?<g>
+    <path d="M47 65 Q64 54 88 61 L87 104 Q70 115 54 101Z M92 61 Q116 54 133 65 L126 101 Q110 115 93 104Z" fill={part('upperback')}/>
+    <path d="M55 105 Q72 113 88 106 L86 151 Q70 158 57 148Z M92 106 Q108 113 125 105 L123 148 Q110 158 94 151Z" fill={part('lowerback')}/>
+    <path d="M57 150 Q74 158 88 154 L89 179 Q73 185 57 174Z M92 154 Q106 158 123 150 L123 174 Q107 185 91 179Z" fill={part('glutes')}/>
+    <path d="M57 181 Q72 185 86 181 L76 238 Q72 250 59 247 Q51 245 53 233Z M94 181 Q108 185 123 181 L127 233 Q129 245 121 247 Q108 250 104 238Z" fill={part('hamstrings')}/>
+    <path d="M54 250 Q66 253 75 247 L69 302 Q67 314 57 313 Q48 312 48 300Z M105 247 Q114 253 126 250 L132 300 Q132 312 123 313 Q113 314 111 302Z" fill={part('calves')}/>
+    <path d="M39 68 Q48 67 55 79 L46 125 Q40 133 33 127 L27 119Z M125 79 Q132 67 141 68 L153 119 L147 127 Q140 133 134 125Z" fill={part('triceps')}/>
+    <path d="M28 124 Q38 133 46 128 L40 158 Q34 165 28 157Z M134 128 Q142 133 152 124 L152 157 Q146 165 140 158Z" fill={part('forearms')}/>
+    <path d="M90 64 L90 151 M90 155 L90 177" fill="none" stroke="#B18D83" strokeWidth="1.5" opacity=".7"/>
+   </g>:<g>
+    <path d="M39 64 Q53 52 73 62 L87 77 L82 100 Q62 107 47 94Z M107 62 Q127 52 141 64 L133 94 Q118 107 98 100 L93 77Z" fill={part('shoulders')}/>
+    <path d="M47 91 Q68 82 88 96 L86 126 Q68 137 51 121Z M93 96 Q112 82 133 91 L129 121 Q112 137 94 126Z" fill={part('chest')}/>
+    <path d="M55 127 Q72 135 88 130 L87 177 Q72 184 58 175Z M92 130 Q108 135 125 127 L122 175 Q108 184 93 177Z" fill={part('abs')}/>
+    <path d="M39 76 Q48 82 52 97 L45 139 Q38 147 31 137 L28 111Z M128 97 Q132 82 141 76 L152 111 L149 137 Q142 147 135 139Z" fill={part('biceps')}/>
+    <path d="M31 140 Q39 147 46 141 L40 165 Q33 171 28 162Z M134 141 Q141 147 149 140 L152 162 Q147 171 140 165Z" fill={part('forearms')}/>
+    <path d="M58 181 Q73 185 87 181 L80 238 Q77 250 63 248 Q52 246 53 233Z M93 181 Q107 185 122 181 L127 233 Q128 246 117 248 Q103 250 100 238Z" fill={part('quads')}/>
+    <path d="M54 250 Q65 253 76 247 L70 302 Q68 314 58 313 Q48 312 48 300Z M104 247 Q115 253 126 250 L132 300 Q132 312 122 313 Q112 314 110 302Z" fill={part('calves')}/>
+    <path d="M90 96 L90 177" fill="none" stroke="#B18D83" strokeWidth="1.2" opacity=".55"/>
+   </g>}
+   <path d="M65 12 Q90 2 115 12" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity=".35"/>
+   <path d="M40 70 Q48 62 55 65 M125 65 Q133 62 140 70" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity=".45"/>
+  </g>
  </svg>;
  const labels:Record<string,string>={chest:'Pecho',shoulders:'Hombros',biceps:'Bíceps',triceps:'Tríceps',upperback:'Espalda alta',lowerback:'Lumbar',abs:'Abdominales',glutes:'Glúteos',quads:'Cuádriceps',hamstrings:'Isquiosurales',calves:'Gemelos',forearms:'Antebrazos'};
- return <div className="body-map-v2"><div className="anatomy-views"><div className="anatomy-side">{view(false)}<b>FRONTAL</b></div><div className="anatomy-side">{view(true)}<b>POSTERIOR</b></div></div><div className="muscle-key"><strong>{active.length?'Zonas implicadas':'Selecciona un ejercicio'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{labels[id]||id}</span>):<small>Al elegir un ejercicio se marcarán aquí los músculos principales.</small>}</div></div></div>;
+ return <div className="body-map-v2"><div className="anatomy-views"><div className="anatomy-side">{view(false)}<b>FRONTAL</b></div><div className="anatomy-side">{view(true)}<b>POSTERIOR</b></div></div><div className="muscle-key"><strong>{active.length?'MÚSCULOS TRABAJADOS':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{labels[id]||id}</span>):<small>Selecciona ejercicios para resaltar las zonas implicadas.</small>}</div><small>Rosa: músculo implicado · Verde: resto del cuerpo</small></div></div>;
 }
 function BodyStats({metrics,heightCm,age,sex,targetWeight}:{metrics:Metric[];heightCm:number;age:number;sex:'male'|'female';targetWeight:number}) {
  const latest=metrics.filter(m=>m.weight>0).slice().sort((a,b)=>b.date.localeCompare(a.date))[0]; const weight=latest?.weight??0; const bmi=weight&&heightCm?weight/((heightCm/100)**2):0; const bf=bodyFatEstimate(weight,heightCm,age,sex); const min=heightCm?18.5*((heightCm/100)**2):0; const max=heightCm?24.9*((heightCm/100)**2):0; const delta=weight&&targetWeight?weight-targetWeight:0;
