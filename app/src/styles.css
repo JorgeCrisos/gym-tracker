@@ -201,3 +201,17 @@ input,select,textarea{background:#F8FAF8!important;color:#35483F!important;borde
 .auth-switch{color:#648D78!important}
 .auth-card>small{color:#819188!important}
 :root{color-scheme:light}
+
+
+/* Interactive rotatable anatomy viewer */
+.body-map-3d{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:center!important}
+.anatomy-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:310px;padding:8px 12px 22px;border-radius:16px;background:radial-gradient(ellipse at 50% 42%,#FFFFFF 0%,#F4F7F2 57%,#F7EFF3 100%);perspective:900px;touch-action:pan-y;cursor:grab;user-select:none;overflow:hidden}
+.anatomy-stage:active{cursor:grabbing}
+.anatomy-model{display:flex;align-items:center;justify-content:center;transform-style:preserve-3d;transition:filter .15s ease;filter:drop-shadow(0 14px 12px rgba(95,76,70,.18));will-change:transform}
+.anatomy-model svg{width:min(62vw,245px)!important;height:290px!important;max-height:290px!important;overflow:visible}
+.anatomy-orientation{position:absolute;top:12px;left:14px;padding:5px 9px;border-radius:20px;background:#FFFFFFC9;color:#688073;font-size:9px;font-weight:800;letter-spacing:.8px}
+.anatomy-hint{position:absolute;bottom:9px;left:0;right:0;text-align:center;color:#87968D;font-size:10px}
+.anatomy-controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.anatomy-controls button{min-width:40px;padding:8px 12px;border:1px solid #DCE7E0;border-radius:20px;background:#F5F8F5;color:#587466;font-size:11px;font-weight:700}
+.anatomy-controls button:active{background:#E5F1E9;transform:scale(.97)}
+@media(max-width:680px){.anatomy-stage{min-height:290px}.anatomy-model svg{height:260px!important;width:min(70vw,220px)!important}}
