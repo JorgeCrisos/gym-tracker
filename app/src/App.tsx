@@ -59,11 +59,12 @@ type AppProps = {
   cloudEnabled?: boolean
   groupInviteCode?: string
   onWorkoutSave?: (ownWorkout: Workout, partnerWorkout: Workout | null) => Promise<void>
+  onWorkoutDelete?: (workoutId: string) => Promise<void>
   onProfileSave?: (data: AppData) => Promise<void>
   onSignOut?: () => void
 }
 
-export default function App({ initialData, currentPerson, partnerPerson, partnerUserId, cloudEnabled = false, groupInviteCode, onWorkoutSave, onProfileSave, onSignOut }: AppProps) {
+export default function App({ initialData, currentPerson, partnerPerson, partnerUserId, cloudEnabled = false, groupInviteCode, onWorkoutSave, onWorkoutDelete, onProfileSave, onSignOut }: AppProps) {
   const [data, setData] = useState<AppData>(() => initialData ?? load())
   const [tab, setTab] = useState<Tab>('train')
   const [person, setPerson] = useState<Person>(currentPerson ?? 'jorge')
@@ -115,12 +116,12 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
   const records = useMemo(() => {
     const best = new Map<string, number>()
     workouts.forEach(w => w.sets.filter(s => s.person === person).forEach(s => best.set(s.exercise, Math.max(best.get(s.exercise) || 0, s.weight))))
-    return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    return Array.from(best.entries()).sort((a, b) => b[1] - a[1])
   }, [workouts, person])
   const oneRepMax = useMemo(() => {
     const best = new Map<string, number>()
     sets.forEach(s => best.set(s.exercise, Math.max(best.get(s.exercise) || 0, estimatedOneRepMax(s.weight, s.reps))))
-    return Array.from(best.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    return Array.from(best.entries()).sort((a, b) => b[1] - a[1])
   }, [sets])
   const muscleVolumes = useMemo(() => {
     const totals = new Map<string, number>()
@@ -164,6 +165,15 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     }
     setRunning(false); setTimer(0); setTab('history'); setNotice('Entrenamiento guardado'); setFinishing(false)
   }
+  async function deleteWorkout(workoutId: string) {
+    if (cloudEnabled && onWorkoutDelete) {
+      try { await onWorkoutDelete(workoutId) }
+      catch (e) { setNotice('No se pudo eliminar: ' + (e instanceof Error ? e.message : 'revisa la conexión')); return }
+    }
+    setData(d => ({ ...d, workouts: d.workouts.filter(w => w.id !== workoutId) }))
+    setNotice('Entrenamiento eliminado')
+  }
+
   function createRoutine() {
     const ex = routineExercises.split(',').map(x => x.trim()).filter(Boolean)
     if (!routineName.trim() || !ex.length) { setNotice('Completa nombre y ejercicios'); return }
@@ -182,7 +192,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     setNotice('Perfil corporal guardado')
   }
   function addMetric() {
-    if (!metricWeight && !metricWaist) { setNotice('Introduce al menos una medición'); return }
+    if (!(Number(metricWeight) > 0) || Number(metricWeight) > 400 || (metricWaist && (Number(metricWaist) < 30 || Number(metricWaist) > 250))) { setNotice('Introduce un peso válido y, si quieres, una cintura válida'); return }
     setData(d => ({ ...d, metrics: [...d.metrics, { id: uid(), person, date: today(), weight: Number(metricWeight) || 0, waist: Number(metricWaist) || 0 }] }))
     setMetricWeight(''); setMetricWaist(''); setNotice('Medición guardada')
   }
@@ -252,7 +262,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
         <div className="panel create-panel"><div className="panel-heading"><div><span className="eyebrow">PERSONALIZA</span><h2>Crear rutina</h2></div><Plus size={22} /></div><div className="form-grid"><label>Nombre<input value={routineName} onChange={e => setRoutineName(e.target.value)} placeholder="Ej. Full body B" /></label><label>Asignar a<select value={routineOwner} onChange={e => setRoutineOwner(e.target.value as Person | 'shared')}><option value={person}>{names[person]}</option>{!cloudEnabled && <><option value="jorge">Jorge</option><option value="marta">Marta</option></>}<option value="shared">Compartida</option></select></label><label className="wide">Ejercicios separados por comas<textarea value={routineExercises} onChange={e => setRoutineExercises(e.target.value)} /></label></div><button className="primary-btn" onClick={createRoutine}><Plus size={16} /> Guardar rutina</button></div>
       </section>}
 
-      {tab === 'history' && <section className="page-content"><div className="section-title"><div><span className="eyebrow">REGISTRO COMPLETO</span><h2>Historial por ejercicio y día</h2></div><button className="outline-btn" onClick={exportCsv}><ArrowDownToLine size={16} /> Exportar CSV</button></div><div className="panel create-panel history-filter"><label>Filtrar ejercicio<select value={historyExercise} onChange={e=>setHistoryExercise(e.target.value)}><option value="">Todos los ejercicios</option>{Array.from(new Set(sets.map(x=>x.exercise))).sort().map(x=><option key={x}>{x}</option>)}</select></label><label>Periodo<select value={historyRange} onChange={e=>setHistoryRange(e.target.value)}><option value="all">Todo el historial</option><option value="90">Últimos 90 días</option><option value="30">Últimos 30 días</option></select></label></div>{historyExercise && <div className="panel previous-load"><span className="eyebrow">REFERENCIA PARA TU PRÓXIMA SESIÓN</span>{(()=>{const prev=workouts.flatMap(w=>w.sets.filter(x=>x.person===person&&x.exercise===historyExercise).map(x=>({date:w.date,weight:x.weight,reps:x.reps}))).sort((a,b)=>b.date.localeCompare(a.date))[0];return prev?<><h2>{prev.weight} kg × {prev.reps}</h2><p>Último registro · {fmt(prev.date)}</p></>:<p>Sin registros anteriores para este ejercicio.</p>})()}</div>}{workouts.length ? <div className="session-list">{workouts.filter(w=>(historyRange==='all'||Date.now()-new Date(w.date+'T23:59:59').getTime()<=Number(historyRange)*86400000)&&(!historyExercise||w.sets.some(x=>x.person===person&&x.exercise===historyExercise))).map(w=><Session key={w.id} workout={w} person={person} expanded onDelete={() => setData(d => ({ ...d, workouts: d.workouts.filter(x => x.id !== w.id) }))} />)}</div> : <Empty title="Aún no hay entrenamientos" text="Cuando termines una sesión, aparecerá aquí con todos sus detalles." />}</section>}
+      {tab === 'history' && <section className="page-content"><div className="section-title"><div><span className="eyebrow">REGISTRO COMPLETO</span><h2>Historial por ejercicio y día</h2></div><button className="outline-btn" onClick={exportCsv}><ArrowDownToLine size={16} /> Exportar CSV</button></div><div className="panel create-panel history-filter"><label>Filtrar ejercicio<select value={historyExercise} onChange={e=>setHistoryExercise(e.target.value)}><option value="">Todos los ejercicios</option>{Array.from(new Set(sets.map(x=>x.exercise))).sort().map(x=><option key={x}>{x}</option>)}</select></label><label>Periodo<select value={historyRange} onChange={e=>setHistoryRange(e.target.value)}><option value="all">Todo el historial</option><option value="90">Últimos 90 días</option><option value="30">Últimos 30 días</option></select></label></div>{historyExercise && <div className="panel previous-load"><span className="eyebrow">REFERENCIA PARA TU PRÓXIMA SESIÓN</span>{(()=>{const prev=workouts.flatMap(w=>w.sets.filter(x=>x.person===person&&x.exercise===historyExercise).map(x=>({date:w.date,weight:x.weight,reps:x.reps}))).sort((a,b)=>b.date.localeCompare(a.date))[0];return prev?<><h2>{prev.weight} kg × {prev.reps}</h2><p>Último registro · {fmt(prev.date)}</p></>:<p>Sin registros anteriores para este ejercicio.</p>})()}</div>}{workouts.length ? <div className="session-list">{workouts.filter(w=>(historyRange==='all'||Date.now()-new Date(w.date+'T23:59:59').getTime()<=Number(historyRange)*86400000)&&(!historyExercise||w.sets.some(x=>x.person===person&&x.exercise===historyExercise))).map(w=><Session key={w.id} workout={w} person={person} expanded onDelete={() => { void deleteWorkout(w.id) }} />)}</div> : <Empty title="Aún no hay entrenamientos" text="Cuando termines una sesión, aparecerá aquí con todos sus detalles." />}</section>}
 
       {tab === 'prs' && <section className="page-content"><div className="section-title"><div><span className="eyebrow">PERSONAL RECORDS</span><h2>Tus mejores marcas</h2></div><Trophy size={22}/></div><div className="metric-grid"><Metric label="EJERCICIOS CON MARCA" value={String(records.length)} detail="Con peso registrado"/><Metric label="MEJOR 1RM ESTIMADO" value={oneRepMax.length?Math.max(...oneRepMax.map(x=>x[1])).toFixed(1)+' kg':'—'} detail="Fórmula Epley"/><Metric label="SERIES REGISTRADAS" value={String(sets.length)} detail="Histórico"/></div><div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">RÉCORD POR EJERCICIO</span><h2>Mejor peso levantado</h2></div></div>{records.length?<div className="bar-list">{records.map(([name,value])=><div className="bar-item" key={name}><div><b>{name}</b><strong>{value} kg</strong></div><div className="bar-track"><i style={{width:(value/Math.max(...records.map(x=>x[1]))*100)+'%'}}/></div></div>)}</div>:<Empty title="Aún no hay PRs" text="Tus mejores marcas aparecerán al registrar entrenamientos."/ >}</div><div className="panel chart-panel"><div className="section-title"><div><span className="eyebrow">FUERZA ESTIMADA</span><h2>1 repetición máxima</h2></div></div>{oneRepMax.map(([name,value])=><div className="set-row" key={name}><div className="set-main"><b>{name}</b><small>1RM estimado</small></div><strong>{value.toFixed(1)} kg</strong></div>)}</div></section>}
       {tab === 'charts' && <section className="page-content"><div className="section-title"><div><span className="eyebrow">EVOLUCIÓN</span><h2>Gráficas de rendimiento</h2></div><BarChart3 size={22}/></div><div className="panel chart-panel"><h2>Volumen por semana</h2><div className="trend-bars">{Array.from({length:8},(_,i)=>{const startDate=new Date();startDate.setDate(startDate.getDate()-((7-i)*7));const endDate=new Date(startDate);endDate.setDate(endDate.getDate()+7);const v=workouts.filter(w=>{const d=new Date(w.date+'T12:00:00');return d>=startDate&&d<endDate}).reduce((n,w)=>n+vol(w.sets.filter(x=>x.person===person)),0);return <div className="trend-column" key={i}><div className="trend-bar" style={{height:Math.max(4,v/(Math.max(1,...workouts.map(w=>vol(w.sets)))*1.15)*150)+'px'}}/><small>{startDate.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})}</small><b>{Math.round(v).toLocaleString('es-ES')}</b></div>})}</div></div><div className="panel chart-panel"><h2>Evolución de fuerza por ejercicio</h2><label>Ejercicio<select value={historyExercise} onChange={e=>setHistoryExercise(e.target.value)}><option value="">Selecciona ejercicio</option>{Array.from(new Set(sets.map(x=>x.exercise))).sort().map(x=><option key={x}>{x}</option>)}</select></label>{historyExercise&&<div className="trend-bars">{workouts.slice().reverse().filter(w=>w.sets.some(x=>x.person===person&&x.exercise===historyExercise)).map(w=><div className="trend-column" key={w.id}><div className="trend-bar" style={{height:Math.max(4,Math.max(...w.sets.filter(x=>x.person===person&&x.exercise===historyExercise).map(x=>x.weight))/Math.max(1,...sets.filter(x=>x.exercise===historyExercise).map(x=>x.weight))*150)+'px'}}/><small>{fmt(w.date)}</small><b>{Math.max(...w.sets.filter(x=>x.person===person&&x.exercise===historyExercise).map(x=>x.weight))} kg</b></div>)}</div>}</div></section>}
