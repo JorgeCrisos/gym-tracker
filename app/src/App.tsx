@@ -34,39 +34,40 @@ function load(): AppData {
 }
 function fmt(date: string) { return new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) }
 function vol(sets: SetEntry[]) { return sets.reduce((sum, s) => sum + s.weight * s.reps, 0) }
+function normalizeExercise(name:string){return name.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
 function muscleGroup(name: string): string {
-  const n = name.toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
-  if (/biceps|curl martillo|curl alterno|curl concentrado|curl spider|curl predicador/.test(n)) return 'Bíceps'
-  if (/triceps|extension de codo|press frances|rompecraneos|patada de triceps/.test(n)) return 'Tríceps'
-  if (/sentadilla|prensa|extension de cuadriceps|zancada|step up|sissy squat/.test(n)) return 'Cuádriceps'
-  if (/hip thrust|gluteo|abduccion de cadera|patada de gluteo|kickback/.test(n)) return 'Glúteos'
-  if (/peso muerto|curl femoral|rumano|buenos dias|nordic/.test(n)) return 'Isquiosurales'
-  if (/press banca|press inclinado|apertura|flexiones|peck deck|cruce de poleas|pullover/.test(n)) return 'Pecho'
-  if (/remo|jalon|dominada|pull.?down|pullover|encogimiento|shrug/.test(n)) return 'Espalda'
-  if (/press militar|elevacion lateral|face pull|pajaro|hombro|arnold/.test(n)) return 'Hombros'
-  if (/plancha|abdominal|crunch|dead bug|pallof|rueda abdominal/.test(n)) return 'Core'
-  if (/gemelo|soleo|elevacion de talones/.test(n)) return 'Gemelos'
-  if (/antebrazo|wrist curl|agarre/.test(n)) return 'Antebrazos'
-  return 'Otros'
+ const n=normalizeExercise(name);
+ if(/patada de gluteo|kickback|hip thrust|puente de gluteos|abduccion de cadera/.test(n))return 'Glúteos';
+ if(/patada de triceps|triceps|extension de codo|press frances|rompecraneos/.test(n))return 'Tríceps';
+ if(/biceps|curl martillo|curl alterno|curl concentrado|curl spider|curl predicador/.test(n))return 'Bíceps';
+ if(/sentadilla|prensa|extension de cuadriceps|zancada|step up|sissy squat/.test(n))return 'Cuádriceps';
+ if(/peso muerto|curl femoral|rumano|buenos dias|nordic/.test(n))return 'Isquiosurales';
+ if(/press banca|press inclinado|apertura|flexiones|peck deck|cruce de poleas|pullover/.test(n))return 'Pecho';
+ if(/remo|jalon|dominada|pull.?down|encogimiento|shrug/.test(n))return 'Espalda';
+ if(/press militar|elevacion lateral|face pull|pajaro|hombro|arnold/.test(n))return 'Hombros';
+ if(/plancha|abdominal|crunch|dead bug|pallof|rueda abdominal/.test(n))return 'Core';
+ if(/gemelo|soleo|elevacion de talones/.test(n))return 'Gemelos';
+ if(/antebrazo|wrist curl|agarre|farmer/.test(n))return 'Antebrazos';
+ return 'Otros';
 }
-function estimatedOneRepMax(weight: number, reps: number) { return reps <= 1 ? weight : weight * (1 + Math.min(reps, 12) / 30) }
 const exerciseCatalog = ['Press banca con barra','Press banca con mancuernas','Press inclinado con barra','Press inclinado con mancuernas','Press declinado','Press en máquina convergente','Aperturas con mancuernas','Aperturas en polea','Cruce de poleas','Peck deck','Flexiones','Flexiones inclinadas','Pullover con mancuerna','Press militar con barra','Press militar con mancuernas','Press Arnold','Elevaciones laterales con mancuernas','Elevaciones laterales en polea','Elevaciones frontales','Pájaros con mancuernas','Pájaros en máquina','Face pull','Remo al mentón','Remo con barra','Remo Pendlay','Remo con mancuerna','Remo en polea baja','Remo sentado','Remo pecho apoyado','Remo en máquina','Jalón al pecho agarre ancho','Jalón al pecho agarre estrecho','Jalón agarre neutro','Jalón unilateral','Dominadas pronas','Dominadas supinas','Dominadas asistidas','Peso muerto convencional','Peso muerto sumo','Hiperextensiones lumbares','Encogimientos de trapecio','Curl de bíceps con barra','Curl de bíceps con barra Z','Curl alterno con mancuernas','Curl martillo','Curl martillo cruzado','Curl concentrado','Curl predicador','Curl Scott con barra Z','Curl en polea baja','Curl en polea alta','Curl bayesian','Curl spider','Curl en banco inclinado','Curl de bíceps en máquina','Curl 21','Press francés con barra Z','Press francés con mancuernas','Extensión de tríceps en polea','Extensión de tríceps con cuerda','Extensión de tríceps por encima de la cabeza','Extensión unilateral en polea','Patada de tríceps','Fondos en paralelas','Fondos asistidos','Rompecráneos','Press banca agarre cerrado','Sentadilla con barra','Sentadilla frontal','Sentadilla goblet','Sentadilla búlgara','Sentadilla hack','Prensa inclinada','Prensa horizontal','Extensión de cuádriceps','Sissy squat','Zancadas caminando','Zancadas inversas','Step-up al cajón','Peso muerto rumano','Peso muerto piernas rígidas','Curl femoral tumbado','Curl femoral sentado','Curl femoral unilateral','Nordic curl','Buenos días','Hip thrust con barra','Hip thrust en máquina','Puente de glúteos','Patada de glúteo en polea','Abducción de cadera en máquina','Abducción de cadera en polea','Peso muerto a una pierna','Gemelos de pie','Gemelos sentado','Gemelos en prensa','Elevación de talones unilateral','Plancha','Plancha lateral','Crunch abdominal','Crunch en polea','Elevación de piernas','Elevación de rodillas colgado','Rueda abdominal','Dead bug','Pallof press','Russian twist','Curl de muñeca','Curl inverso de muñeca','Farmer walk','Agarre de pinza']
 function muscleTargets(name:string):string[]{
- const n=name.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+ const n=normalizeExercise(name);
+ // Glúteo y cadera: reglas específicas antes de cualquier término genérico como "patada".
+ if(/patada de gluteo|kickback|hip thrust|puente de gluteos/.test(n))return ['glutes','hamstrings'];
+ if(/abduccion de cadera/.test(n))return ['abductors','glutes'];
+ if(/aduccion de cadera/.test(n))return ['adductors'];
+ if(/patada de triceps|extension de triceps|extension unilateral en polea|press frances|rompecraneos|fondos|press banca agarre cerrado/.test(n))return ['triceps'];
+ if(/curl.*biceps|biceps|martillo|curl predicador|curl scott/.test(n))return ['biceps','forearms'];
  if(/sentadilla|prensa|extension de cuadriceps|zancada|step.?up|sissy squat/.test(n))return ['quadriceps','glutes','adductors'];
- if(/hip thrust|puente de gluteos|patada de gluteo|kickback/.test(n))return ['glutes','hamstrings'];
- if(/abduccion/.test(n))return ['abductors','glutes'];
- if(/aduccion/.test(n))return ['adductors'];
  if(/peso muerto|curl femoral|rumano|buenos dias|nordic|hiperextension/.test(n))return ['hamstrings','glutes','lower back'];
- if(/press banca|press inclinado|press declinado|apertura|flexiones|peck deck|cruce de poleas/.test(n))return ['chest','triceps','shoulders'];
+ if(/press banca|press inclinado|press declinado|apertura|flexiones|peck deck|cruce de poleas|press en maquina/.test(n))return ['chest','triceps','shoulders'];
  if(/pullover/.test(n))return ['lats','chest'];
  if(/remo al menton/.test(n))return ['shoulders','traps'];
  if(/remo/.test(n))return ['middle back','lats','biceps'];
  if(/jalon|dominada|pull.?down/.test(n))return ['lats','biceps','middle back'];
  if(/encogimiento|shrug/.test(n))return ['traps'];
- if(/press militar|press arnold|elevacion lateral|elevacion frontal|face pull|pajaro|remo al menton/.test(n))return ['shoulders','triceps','traps'];
- if(/curl.*biceps|biceps|martillo/.test(n))return ['biceps','forearms'];
- if(/triceps|extension de codo|press frances|fondos|rompecraneos|patada/.test(n))return ['triceps'];
+ if(/press militar|press arnold|elevacion lateral|elevacion frontal|face pull|pajaro/.test(n))return ['shoulders','triceps','traps'];
  if(/plancha|abdominal|crunch|dead bug|pallof|rueda abdominal|elevacion de piernas|russian twist/.test(n))return ['abdominals'];
  if(/gemelo|soleo|elevacion de talones/.test(n))return ['calves'];
  if(/antebrazo|curl de muneca|agarre|farmer/.test(n))return ['forearms'];
@@ -277,7 +278,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
           <div className="active-banner"><div><i /> SESIÓN EN CURSO <b>· {data.active.mode === 'together' ? 'Juntos' : names[data.active.people[0]]}</b></div><div className="active-actions"><button type="button" className="outline-btn" onClick={()=>{if(window.confirm('¿Descartar esta sesión? Se perderán las series que no hayas guardado como entrenamiento.')){setData(d=>({...d,active:null}));setExercise('');setExerciseSearch('');setCustomExercise('');setRunning(false);setTimer(0);setNotice('Sesión descartada')}}}>Descartar</button><button className="finish-btn" onClick={finish} disabled={finishing}><Check size={16} /> {finishing?'Guardando…':'Finalizar'}</button></div></div>
           <div className="panel workout-muscle-panel"><div className="section-title"><div><span className="eyebrow">MÚSCULOS DE ESTA SESIÓN</span><h2>Mapa muscular</h2></div><Activity size={20}/></div><BodyMap active={sessionMuscleGroups(data.active, exercise, customExercise)}/><p className="helper">Solo se resaltan los músculos de los ejercicios registrados en esta sesión y del ejercicio que tengas seleccionado. Si no hay ninguno, el cuerpo queda neutro.</p></div>
           <div className="training-grid"><div className="panel log-panel"><div className="panel-heading"><div><span className="eyebrow">REGISTRO DE SERIES</span><h2>Añadir serie</h2></div><Dumbbell size={22} /></div>
-            <div className="exercise-picker"><label htmlFor="exercise-search">Ejercicio</label><div className="exercise-search-wrap"><input id="exercise-search" type="search" value={exerciseSearch} onFocus={()=>{setExerciseSearch('');setExerciseOpen(true)}} onChange={e=>{setExerciseSearch(e.target.value);setExerciseOpen(true)}} placeholder="Escribe un ejercicio, por ejemplo press…"/><span className="picker-chevron">⌕</span></div>{exerciseOpen&&<div className="exercise-options">{Array.from(new Set([...exerciseCatalog,...data.routines.flatMap(r=>r.exercises.map(e=>e.name))])) .filter(name=>{const q=exerciseSearch.toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim();const n=name.toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');const g=muscleGroup(name).toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');return !q||n.includes(q)||g.includes(q)}).map(name=><button type="button" key={name} className={'exercise-option '+(exercise===name?'selected':'')} onClick={()=>{setExercise(name);setExerciseSearch(name);setExerciseOpen(false);const previous=workouts.flatMap(w=>w.sets.filter(x=>x.person===person&&x.exercise===name).map(x=>({date:w.date,weight:x.weight,reps:x.reps}))).sort((a,b)=>b.date.localeCompare(a.date))[0];if(previous){setWeight(String(previous.weight));setReps(String(previous.reps));setNotice('Última carga recuperada: '+previous.weight+' kg')}}}><ExerciseThumb name={name}/><span className="exercise-option-copy"><b>{name}</b><small>{muscleGroup(name)}</small></span><ChevronRight size={15}/></button>)}{!Array.from(new Set([...exerciseCatalog,...data.routines.flatMap(r=>r.exercises.map(e=>e.name))])).some(name=>name.toLocaleLowerCase('es').includes(exerciseSearch.toLocaleLowerCase('es')))&&<p className="no-exercise-results">No hay coincidencias. Puedes añadirlo como ejercicio personalizado.</p>}<button type="button" className="custom-option" onClick={()=>{setExercise('__custom__');setExerciseSearch('');setExerciseOpen(false)}}>＋ Añadir ejercicio personalizado</button></div>}{exercise==='__custom__'&&<input className="custom-exercise-input" value={customExercise} onChange={e=>setCustomExercise(e.target.value)} placeholder="Escribe el nombre del ejercicio"/>}<small className="selected-exercise">{exercise ? <>Seleccionado: {exercise==='__custom__'?(customExercise||'Personalizado'):exercise} · <button type="button" className="clear-exercise" onClick={()=>{setExercise('');setExerciseSearch('');setCustomExercise('')}}>Quitar selección</button></> : 'Ningún ejercicio seleccionado'}</small></div>
+            <div className="exercise-picker"><label htmlFor="exercise-search">Ejercicio</label><div className="exercise-search-wrap"><input id="exercise-search" type="search" value={exerciseSearch} onFocus={()=>{setExerciseSearch('');setExerciseOpen(true)}} onChange={e=>{setExerciseSearch(e.target.value);setExerciseOpen(true)}} placeholder="Escribe un ejercicio, por ejemplo press…"/><span className="picker-chevron">⌕</span></div>{exerciseOpen&&<div className="exercise-options">{Array.from(new Set([...exerciseCatalog,...data.routines.flatMap(r=>r.exercises.map(e=>e.name))])) .filter(name=>{const q=exerciseSearch.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();const n=name.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');const g=muscleGroup(name).toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');return !q||n.includes(q)||g.includes(q)}).map(name=><button type="button" key={name} className={'exercise-option '+(exercise===name?'selected':'')} onClick={()=>{setExercise(name);setExerciseSearch(name);setExerciseOpen(false);const previous=workouts.flatMap(w=>w.sets.filter(x=>x.person===person&&x.exercise===name).map(x=>({date:w.date,weight:x.weight,reps:x.reps}))).sort((a,b)=>b.date.localeCompare(a.date))[0];if(previous){setWeight(String(previous.weight));setReps(String(previous.reps));setNotice('Última carga recuperada: '+previous.weight+' kg')}}}><ExerciseThumb name={name}/><span className="exercise-option-copy"><b>{name}</b><small>{muscleGroup(name)}</small></span><ChevronRight size={15}/></button>)}{!Array.from(new Set([...exerciseCatalog,...data.routines.flatMap(r=>r.exercises.map(e=>e.name))])).some(name=>name.toLocaleLowerCase('es').includes(exerciseSearch.toLocaleLowerCase('es')))&&<p className="no-exercise-results">No hay coincidencias. Puedes añadirlo como ejercicio personalizado.</p>}<button type="button" className="custom-option" onClick={()=>{setExercise('__custom__');setExerciseSearch('');setExerciseOpen(false)}}>＋ Añadir ejercicio personalizado</button></div>}{exercise==='__custom__'&&<input className="custom-exercise-input" value={customExercise} onChange={e=>setCustomExercise(e.target.value)} placeholder="Escribe el nombre del ejercicio"/>}<small className="selected-exercise">{exercise ? <>Seleccionado: {exercise==='__custom__'?(customExercise||'Personalizado'):exercise} · <button type="button" className="clear-exercise" onClick={()=>{setExercise('');setExerciseSearch('');setCustomExercise('')}}>Quitar selección</button></> : 'Ningún ejercicio seleccionado'}</small></div>
             {data.active.people.length > 1 && <div className="field"><span>¿De quién es esta serie?</span><div className="person-pills">{data.active.people.map(p => <button key={p} className={activeSetPerson === p ? 'selected ' + p : ''} onClick={() => setSetPerson(p)}>{names[p]}</button>)}</div></div>}
             <div className="input-row"><label>Peso (kg)<input type="number" min="0" step="0.5" value={weight} onChange={e => setWeight(e.target.value)} /></label><label>Repeticiones<input type="number" min="0" value={reps} onChange={e => setReps(e.target.value)} /></label></div>
             <div className="input-row"><label>RPE (1–10)<input type="number" min="1" max="10" value={rpe} onChange={e => setRpe(e.target.value)} /></label><label>Descanso (seg)<input type="number" min="0" value={rest} onChange={e => setRest(e.target.value)} /></label></div>
@@ -318,7 +319,57 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 }
 
 
-function ExerciseThumb({name}:{name:string}) { const group=muscleGroup(name); const lower=['Cuádriceps','Glúteos','Isquiosurales','Gemelos'].includes(group); const back=['Espalda','Isquiosurales'].includes(group); return <span className={'exercise-thumb '+(lower?'lower':'upper')} aria-hidden="true"><svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d={lower?'M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28':'M23 19 L24 33 L17 46 M24 33 L32 46 M24 23 L12 28 M24 23 L37 28'}/><path d={back?'M45 16 L62 16 M48 12 L48 20 M59 12 L59 20':'M42 27 L64 27 M45 22 L45 32 M61 22 L61 32'}/><path d="M38 8 L38 46" className="thumb-equipment"/></svg></span> }
+const EXERCISE_IMAGE_BASE='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+function exerciseImageId(name:string):string{
+ const n=normalizeExercise(name);
+ if(/patada de gluteo/.test(n))return 'Glute_Kickback';
+ if(/hip thrust|puente de gluteos/.test(n))return 'Barbell_Hip_Thrust';
+ if(/abduccion de cadera/.test(n))return 'Adductor';
+ if(/sentadilla goblet/.test(n))return 'Goblet_Squat';
+ if(/sentadilla frontal/.test(n))return 'Front_Squat_Clean_Grip';
+ if(/sentadilla|zancada|step.?up|sissy squat/.test(n))return 'Barbell_Full_Squat';
+ if(/prensa/.test(n))return 'Leg_Press';
+ if(/extension de cuadriceps/.test(n))return 'Leg_Extensions';
+ if(/curl femoral sentado/.test(n))return 'Seated_Leg_Curl';
+ if(/curl femoral/.test(n))return 'Lying_Leg_Curls';
+ if(/peso muerto rumano/.test(n))return 'Romanian_Deadlift';
+ if(/peso muerto/.test(n))return 'Barbell_Deadlift';
+ if(/patada de triceps/.test(n))return 'Tricep_Dumbbell_Kickback';
+ if(/press banca con mancuernas/.test(n))return 'Dumbbell_Bench_Press';
+ if(/press inclinado con mancuernas/.test(n))return 'Incline_Dumbbell_Bench_Press';
+ if(/press inclinado/.test(n))return 'Barbell_Incline_Bench_Press_-_Medium_Grip';
+ if(/press banca|press declinado|press en maquina|fondos/.test(n))return 'Barbell_Bench_Press_-_Medium_Grip';
+ if(/apertura con mancuernas/.test(n))return 'Dumbbell_Flyes';
+ if(/apertura|cruce de poleas|peck deck/.test(n))return 'Cable_Crossover';
+ if(/flexiones/.test(n))return 'Pushups';
+ if(/pullover/.test(n))return 'Bent-Arm_Dumbbell_Pullover';
+ if(/press militar con mancuernas|press arnold/.test(n))return 'Dumbbell_Shoulder_Press';
+ if(/press militar/.test(n))return 'Standing_Military_Press';
+ if(/elevacion lateral|elevacion frontal|pajaro/.test(n))return 'Lateral_Raise_-_With_Bands';
+ if(/face pull/.test(n))return 'Face_Pull';
+ if(/remo con mancuerna/.test(n))return 'One-Arm_Dumbbell_Row';
+ if(/remo|remo pendlay/.test(n))return 'Bent_Over_Barbell_Row';
+ if(/jalon/.test(n))return 'Wide-Grip_Front_Lat_Pulldown';
+ if(/dominada/.test(n))return 'Pullups';
+ if(/curl martillo/.test(n))return 'Hammer_Curls';
+ if(/curl predicador|curl scott/.test(n))return 'Preacher_Curl';
+ if(/curl.*biceps|curl bayesian|curl spider/.test(n))return 'Barbell_Curl';
+ if(/extension de triceps|press frances|rompecraneos|fondos/.test(n))return 'Triceps_Pushdown';
+ if(/curl de muneca|antebrazo|agarre|farmer/.test(n))return 'Farmers_Walk';
+ if(/gemelo|soleo|elevacion de talones/.test(n))return 'Standing_Calf_Raises';
+ if(/plancha/.test(n))return 'Plank';
+ if(/crunch/.test(n))return 'Cable_Crunch';
+ if(/elevacion de piernas|elevacion de rodillas/.test(n))return 'Hanging_Leg_Raise';
+ if(/rueda abdominal/.test(n))return 'Ab_Roller';
+ if(/dead bug/.test(n))return '3_4_Sit-Up';
+ if(/pallof/.test(n))return 'Cable_Crunch';
+ return 'Barbell_Full_Squat';
+}
+function ExerciseThumb({name}:{name:string}) {
+ const [failed,setFailed]=useState(false);
+ const src=EXERCISE_IMAGE_BASE+exerciseImageId(name)+'/0.jpg';
+ return <span className="exercise-thumb" aria-hidden="true">{!failed?<img src={src} alt="" loading="lazy" onError={()=>setFailed(true)}/>:<svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d="M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28 M42 27 L64 27 M45 22 L45 32 M61 22 L61 32"/></svg>}</span>
+}
 function paintMuscleGroups(root:THREE.Object3D, groups:Set<string>){
  root.traverse(object=>{
   if(!(object instanceof THREE.Mesh))return;
