@@ -314,7 +314,8 @@ function BodyMap({active}:{active:string[]}) {
  const mountRef=useRef<HTMLDivElement>(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
- const [view,setView]=useState<'front'|'back'|'side'>('front');
+ const controlsRef=useRef<OrbitControls|null>(null);
+ const modelRef=useRef<THREE.Group|null>(null);
  const activeKey=active.join('|');
  useEffect(()=>{
   const mount=mountRef.current;
@@ -350,10 +351,11 @@ function BodyMap({active}:{active:string[]}) {
   draco.setDecoderPath('https://cdn.jsdelivr.net/gh/tiralonghipol/free-muscles@605dd1ca351421ad874a03f673a2a3f915ab254e/public/draco/');
   const loader=new GLTFLoader();loader.setDRACOLoader(draco);
   const modelUrl='https://cdn.jsdelivr.net/gh/tiralonghipol/free-muscles@605dd1ca351421ad874a03f673a2a3f915ab254e/public/anatomy.glb';
-  const activeGroups=new Set(activeKey?activeKey.split('|'):[]);
   loader.load(modelUrl,gltf=>{
    if(disposed)return;
    model=gltf.scene;
+   modelRef.current=model;
+   controlsRef.current=controls;
    model.updateMatrixWorld(true);
    const bounds=new THREE.Box3().setFromObject(model);
    const center=bounds.getCenter(new THREE.Vector3());
@@ -366,19 +368,19 @@ function BodyMap({active}:{active:string[]}) {
     if(!(object instanceof THREE.Mesh))return;
     const info=object.userData as {kind?:string;group?:string};
     if(info.kind==='muscle'){
-     const materials=Array.isArray(object.material)?object.material: [object.material];
-     object.material=materials.map(original=>{
+     const wasArray=Array.isArray(object.material);
+     const materials=wasArray?object.material:[object.material];
+     const updated=materials.map(original=>{
       const material=original.clone();
       if(material instanceof THREE.MeshStandardMaterial){
-       const selected=!!info.group&&activeGroups.has(info.group);
-       material.color.set(selected?'#D783A5':'#C5D8CC');
-       material.emissive.set(selected?'#8C3F60':'#000000');
-       material.emissiveIntensity=selected?0.16:0;
+       material.color.set('#C5D8CC');
+       material.emissive.set('#000000');
+       material.emissiveIntensity=0;
        material.roughness=0.72;
       }
       return material;
      });
-     if(!Array.isArray(object.material))object.material=object.material[0];
+     object.material=wasArray?updated:updated[0];
     }
    });
    scene.add(model);
@@ -399,15 +401,37 @@ function BodyMap({active}:{active:string[]}) {
   const animate=()=>{if(disposed)return;frame=requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);};
   animate();
   return ()=>{
-   disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();draco.dispose();
+   disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();controlsRef.current=null;modelRef.current=null;draco.dispose();
    scene.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();const mats=Array.isArray(object.material)?object.material:[object.material];mats.forEach(material=>material.dispose());}});
    renderer.dispose();if(renderer.domElement.parentElement===mount)mount.removeChild(renderer.domElement);
   };
+ },[]);
+ useEffect(()=>{
+  const model=modelRef.current;
+  if(!model)return;
+  const selected=new Set(activeKey?activeKey.split('|'):[]);
+  model.traverse(object=>{
+   if(!(object instanceof THREE.Mesh))return;
+   const info=object.userData as {kind?:string;group?:string};
+   if(info.kind!=='muscle')return;
+   const mats=Array.isArray(object.material)?object.material:[object.material];
+   mats.forEach(material=>{
+    if(material instanceof THREE.MeshStandardMaterial){
+     const isActive=!!info.group&&selected.has(info.group);
+     material.color.set(isActive?'#D783A5':'#C5D8CC');
+     material.emissive.set(isActive?'#8C3F60':'#000000');
+     material.emissiveIntensity=isActive?0.16:0;
+    }
+   });
+  });
  },[activeKey]);
  const setPreset=(preset:'front'|'back'|'side')=>{
-  setView(preset);
-  const controls=(mountRef.current as HTMLDivElement & {__orbit?:OrbitControls})?.__orbit;
-  void controls;
+  const controls=controlsRef.current;
+  if(!controls)return;
+  const radius=4.2;
+  const positions={front:new THREE.Vector3(0,0.15,radius),back:new THREE.Vector3(0,0.15,-radius),side:new THREE.Vector3(radius,0.15,0)};
+  controls.object.position.copy(positions[preset]);
+  controls.target.set(0,0,0);controls.update();
  };
  return <div className="body-map-v2 body-map-3d">
   <div className="anatomy-stage real-anatomy-stage">
