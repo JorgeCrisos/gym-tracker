@@ -218,3 +218,23 @@ input,select,textarea{background:#F8FAF8!important;color:#35483F!important;borde
 
 .clear-exercise{border:0;background:transparent;color:#A36F88;text-decoration:underline;text-underline-offset:2px;font:inherit;font-weight:700;padding:2px 4px;cursor:pointer}
 .clear-exercise:hover{color:#80516A}
+
+/* Real Three.js anatomy viewer */
+.body-map-v2.body-map-3d{display:grid!important;grid-template-columns:minmax(0,1fr) 190px!important;grid-template-rows:auto auto auto!important;gap:12px!important;align-items:center!important}
+.real-anatomy-stage{grid-column:1;grid-row:1 / span 2;position:relative;display:block!important;height:450px;min-height:450px!important;padding:0!important;touch-action:none!important;cursor:grab;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#FFFFFF 0%,#F1F6F1 58%,#F8EFF3 100%)}
+.real-anatomy-stage:active{cursor:grabbing}
+.anatomy-canvas{position:absolute;inset:0;width:100%;height:100%}
+.anatomy-canvas canvas{outline:none;touch-action:none}
+.anatomy-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#71877A;font-size:12px;background:#F5F8F2A8;pointer-events:none}
+.anatomy-error{color:#9B526B}
+.body-map-3d .anatomy-controls{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:stretch;gap:7px}
+.body-map-3d .anatomy-controls button{min-height:38px}
+.body-map-3d .muscle-key{grid-column:2;grid-row:2}
+.anatomy-credit{grid-column:1/-1;color:#8A988F;font-size:9px;line-height:1.4;text-align:center}
+@media(max-width:680px){
+ .body-map-v2.body-map-3d{grid-template-columns:1fr!important;grid-template-rows:auto auto auto auto!important}
+ .real-anatomy-stage{grid-column:1;grid-row:1;height:390px;min-height:390px!important}
+ .body-map-3d .anatomy-controls{grid-column:1;grid-row:2;flex-direction:row;justify-content:center}
+ .body-map-3d .muscle-key{grid-column:1;grid-row:3}
+ .anatomy-credit{grid-column:1;grid-row:4}
+}
