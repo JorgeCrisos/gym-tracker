@@ -450,7 +450,7 @@ function BodyMap({active}:{active:string[]}) {
    <button type="button" onClick={()=>setPreset('side')}>Lateral</button>
   </div>
   <div className="muscle-key"><strong>{active.length?'MÚSCULOS DEL EJERCICIO':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{id}</span>):<small>Selecciona un ejercicio para resaltar sus músculos.</small>}</div><small>Rosa: músculo implicado · Verde: resto de la musculatura</small></div>
-  <small className="anatomy-credit">Modelo anatómico derivado de Z-Anatomy / BodyParts3D · CC BY-SA 4.0</small>
+  <small className="anatomy-credit">Modelo 3D: Free Muscle · Z-Anatomy / BodyParts3D · CC BY-SA 4.0</small>
  </div>;
 }
 function BodyStats({metrics,heightCm,age,sex,targetWeight}:{metrics:Metric[];heightCm:number;age:number;sex:'male'|'female';targetWeight:number}) {
