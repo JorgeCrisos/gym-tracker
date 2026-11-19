@@ -56,10 +56,11 @@ function muscleTargets(name:string):string[]{
  if(/sentadilla|prensa|extension de cuadriceps|zancada|step.?up|sissy squat/.test(n))return ['quadriceps','glutes','adductors'];
  if(/hip thrust|puente de gluteos|patada de gluteo|kickback/.test(n))return ['glutes','hamstrings'];
  if(/abduccion/.test(n))return ['abductors','glutes'];
- if(/adduccion/.test(n))return ['adductors'];
+ if(/aduccion/.test(n))return ['adductors'];
  if(/peso muerto|curl femoral|rumano|buenos dias|nordic|hiperextension/.test(n))return ['hamstrings','glutes','lower back'];
  if(/press banca|press inclinado|press declinado|apertura|flexiones|peck deck|cruce de poleas/.test(n))return ['chest','triceps','shoulders'];
  if(/pullover/.test(n))return ['lats','chest'];
+ if(/remo al menton/.test(n))return ['shoulders','traps'];
  if(/remo/.test(n))return ['middle back','lats','biceps'];
  if(/jalon|dominada|pull.?down/.test(n))return ['lats','biceps','middle back'];
  if(/encogimiento|shrug/.test(n))return ['traps'];
