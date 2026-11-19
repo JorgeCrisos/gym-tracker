@@ -238,3 +238,9 @@ input,select,textarea{background:#F8FAF8!important;color:#35483F!important;borde
  .body-map-3d .muscle-key{grid-column:1;grid-row:3}
  .anatomy-credit{grid-column:1;grid-row:4}
 }
+
+
+/* Exercise selector thumbnails use the matching movement reference image. */
+.exercise-thumb{overflow:hidden!important;background:#FFFFFF!important;border:1px solid #E4EAE5!important}
+.exercise-thumb img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;border-radius:8px!important;background:#FFFFFF!important}
+.exercise-thumb svg{width:44px!important;height:40px!important;overflow:visible!important}
