@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Activity, ArrowDownToLine, BarChart3, CalendarDays, Check, ChevronRight, Clock3, Dumbbell, HeartPulse, History, Home, Plus, Save, Target, Timer, Trash2, Trophy, Users, X } from 'lucide-react'
 
 export type Person = 'jorge' | 'marta'
@@ -47,7 +51,26 @@ function muscleGroup(name: string): string {
 }
 function estimatedOneRepMax(weight: number, reps: number) { return reps <= 1 ? weight : weight * (1 + Math.min(reps, 12) / 30) }
 const exerciseCatalog = ['Press banca con barra','Press banca con mancuernas','Press inclinado con barra','Press inclinado con mancuernas','Press declinado','Press en máquina convergente','Aperturas con mancuernas','Aperturas en polea','Cruce de poleas','Peck deck','Flexiones','Flexiones inclinadas','Pullover con mancuerna','Press militar con barra','Press militar con mancuernas','Press Arnold','Elevaciones laterales con mancuernas','Elevaciones laterales en polea','Elevaciones frontales','Pájaros con mancuernas','Pájaros en máquina','Face pull','Remo al mentón','Remo con barra','Remo Pendlay','Remo con mancuerna','Remo en polea baja','Remo sentado','Remo pecho apoyado','Remo en máquina','Jalón al pecho agarre ancho','Jalón al pecho agarre estrecho','Jalón agarre neutro','Jalón unilateral','Dominadas pronas','Dominadas supinas','Dominadas asistidas','Peso muerto convencional','Peso muerto sumo','Hiperextensiones lumbares','Encogimientos de trapecio','Curl de bíceps con barra','Curl de bíceps con barra Z','Curl alterno con mancuernas','Curl martillo','Curl martillo cruzado','Curl concentrado','Curl predicador','Curl Scott con barra Z','Curl en polea baja','Curl en polea alta','Curl bayesian','Curl spider','Curl en banco inclinado','Curl de bíceps en máquina','Curl 21','Press francés con barra Z','Press francés con mancuernas','Extensión de tríceps en polea','Extensión de tríceps con cuerda','Extensión de tríceps por encima de la cabeza','Extensión unilateral en polea','Patada de tríceps','Fondos en paralelas','Fondos asistidos','Rompecráneos','Press banca agarre cerrado','Sentadilla con barra','Sentadilla frontal','Sentadilla goblet','Sentadilla búlgara','Sentadilla hack','Prensa inclinada','Prensa horizontal','Extensión de cuádriceps','Sissy squat','Zancadas caminando','Zancadas inversas','Step-up al cajón','Peso muerto rumano','Peso muerto piernas rígidas','Curl femoral tumbado','Curl femoral sentado','Curl femoral unilateral','Nordic curl','Buenos días','Hip thrust con barra','Hip thrust en máquina','Puente de glúteos','Patada de glúteo en polea','Abducción de cadera en máquina','Abducción de cadera en polea','Peso muerto a una pierna','Gemelos de pie','Gemelos sentado','Gemelos en prensa','Elevación de talones unilateral','Plancha','Plancha lateral','Crunch abdominal','Crunch en polea','Elevación de piernas','Elevación de rodillas colgado','Rueda abdominal','Dead bug','Pallof press','Russian twist','Curl de muñeca','Curl inverso de muñeca','Farmer walk','Agarre de pinza']
-function muscleTargets(name:string):string[]{const n=name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(/sentadilla|prensa|extension de cuadriceps|zancada/.test(n))return ['quads','glutes'];if(/hip thrust|puente de gluteos|abduccion|patada de gluteo/.test(n))return ['glutes'];if(/peso muerto|curl femoral|rumano|buenos dias/.test(n))return ['hamstrings','glutes','lowerback'];if(/press banca|press inclinado|apertura|flexiones|peck deck/.test(n))return ['chest','triceps','shoulders'];if(/remo|jalon|dominada/.test(n))return ['upperback','biceps'];if(/press militar|elevacion lateral|face pull|pajaro/.test(n))return ['shoulders','triceps'];if(/curl.*biceps|biceps|martillo/.test(n))return ['biceps','forearms'];if(/triceps|extension de codo|press frances|fondos/.test(n))return ['triceps'];if(/plancha|abdominal|crunch|dead bug|pallof/.test(n))return ['abs'];if(/gemelo|soleo|elevacion de talones/.test(n))return ['calves'];return [];}
+function muscleTargets(name:string):string[]{
+ const n=name.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+ if(/sentadilla|prensa|extension de cuadriceps|zancada|step.?up|sissy squat/.test(n))return ['quadriceps','glutes','adductors'];
+ if(/hip thrust|puente de gluteos|patada de gluteo|kickback/.test(n))return ['glutes','hamstrings'];
+ if(/abduccion/.test(n))return ['abductors','glutes'];
+ if(/adduccion/.test(n))return ['adductors'];
+ if(/peso muerto|curl femoral|rumano|buenos dias|nordic|hiperextension/.test(n))return ['hamstrings','glutes','lower back'];
+ if(/press banca|press inclinado|press declinado|apertura|flexiones|peck deck|cruce de poleas/.test(n))return ['chest','triceps','shoulders'];
+ if(/pullover/.test(n))return ['lats','chest'];
+ if(/remo/.test(n))return ['middle back','lats','biceps'];
+ if(/jalon|dominada|pull.?down/.test(n))return ['lats','biceps','middle back'];
+ if(/encogimiento|shrug/.test(n))return ['traps'];
+ if(/press militar|press arnold|elevacion lateral|elevacion frontal|face pull|pajaro|remo al menton/.test(n))return ['shoulders','triceps','traps'];
+ if(/curl.*biceps|biceps|martillo/.test(n))return ['biceps','forearms'];
+ if(/triceps|extension de codo|press frances|fondos|rompecraneos|patada/.test(n))return ['triceps'];
+ if(/plancha|abdominal|crunch|dead bug|pallof|rueda abdominal|elevacion de piernas|russian twist/.test(n))return ['abdominals'];
+ if(/gemelo|soleo|elevacion de talones/.test(n))return ['calves'];
+ if(/antebrazo|curl de muneca|agarre|farmer/.test(n))return ['forearms'];
+ return [];
+}
 function bodyFatEstimate(weight:number,heightCm:number,age:number,sex:'male'|'female'){if(!weight||!heightCm||!age)return null;const bmi=weight/((heightCm/100)**2);return Math.max(3,Math.min(60,1.2*bmi+0.23*age-(sex==='male'?10.8:0)-5.4));}
 
 
@@ -288,67 +311,118 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
 function ExerciseThumb({name}:{name:string}) { const group=muscleGroup(name); const lower=['Cuádriceps','Glúteos','Isquiosurales','Gemelos'].includes(group); const back=['Espalda','Isquiosurales'].includes(group); return <span className={'exercise-thumb '+(lower?'lower':'upper')} aria-hidden="true"><svg viewBox="0 0 72 54"><circle cx="23" cy="13" r="5"/><path d={lower?'M23 19 L25 31 L16 43 M25 31 L34 43 M25 23 L13 28 M25 23 L36 28':'M23 19 L24 33 L17 46 M24 33 L32 46 M24 23 L12 28 M24 23 L37 28'}/><path d={back?'M45 16 L62 16 M48 12 L48 20 M59 12 L59 20':'M42 27 L64 27 M45 22 L45 32 M61 22 L61 32'}/><path d="M38 8 L38 46" className="thumb-equipment"/></svg></span> }
 function BodyMap({active}:{active:string[]}) {
- const [angle,setAngle]=useState(0);
- const [dragging,setDragging]=useState(false);
- const [lastX,setLastX]=useState(0);
- const normalized=((angle%360)+360)%360;
- const isBack=normalized>90&&normalized<270;
- const radians=normalized*Math.PI/180;
- const widthFactor=Math.max(.16,Math.abs(Math.cos(radians)));
- const beginDrag=(e:React.PointerEvent<HTMLDivElement>)=>{setDragging(true);setLastX(e.clientX);e.currentTarget.setPointerCapture(e.pointerId)};
- const moveDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(!dragging)return;const dx=e.clientX-lastX;setLastX(e.clientX);setAngle(v=>v+dx*.9)};
- const endDrag=()=>setDragging(false);
- const part=(id:string)=>active.includes(id)?'url(#muscleActive)':'url(#muscleBase)';
- const line='#9A817A';
- const view=(back:boolean)=><svg viewBox="0 0 180 330" role="img" aria-label={back?'Anatomía posterior':'Anatomía frontal'} className="anatomy-figure">
-  <defs>
-   <linearGradient id={back?'skinback':'skinfront'} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#F6E4D9"/><stop offset=".48" stopColor="#EACFC2"/><stop offset="1" stopColor="#DDBBAE"/></linearGradient>
-   <linearGradient id="muscleBase" x1="0" x2="1"><stop stopColor="#DCE9E1"/><stop offset="1" stopColor="#BFD3C7"/></linearGradient>
-   <linearGradient id="muscleActive" x1="0" x2="1"><stop stopColor="#E9AFC4"/><stop offset="1" stopColor="#CB7F9E"/></linearGradient>
-   <linearGradient id="shade" x1="0" x2="1"><stop stopColor="#FFFFFF" stopOpacity=".48"/><stop offset="1" stopColor="#9B6E65" stopOpacity=".14"/></linearGradient>
-  </defs>
-  <g stroke={line} strokeWidth="1.2" strokeLinejoin="round">
-   <path d="M69 37 Q61 30 62 18 Q63 5 90 5 Q117 5 118 18 Q119 30 111 37 L109 49 Q128 49 143 64 L160 119 Q164 133 153 138 Q145 141 140 130 L128 93 L126 146 Q125 160 128 177 L136 237 Q139 251 128 255 Q116 259 111 245 L96 184 L90 171 L84 184 L69 245 Q64 259 52 255 Q41 251 44 237 L52 177 Q55 160 54 146 L52 93 L40 130 Q35 141 27 138 Q16 133 20 119 L37 64 Q52 49 71 49Z" fill={back?'url(#skinback)':'url(#skinfront)'}/>
-   <path d="M69 37 Q90 45 111 37 L109 51 Q90 61 71 51Z" fill="url(#shade)" stroke="none"/>
-   {back?<g>
-    <path d="M47 65 Q64 54 88 61 L87 104 Q70 115 54 101Z M92 61 Q116 54 133 65 L126 101 Q110 115 93 104Z" fill={part('upperback')}/>
-    <path d="M55 105 Q72 113 88 106 L86 151 Q70 158 57 148Z M92 106 Q108 113 125 105 L123 148 Q110 158 94 151Z" fill={part('lowerback')}/>
-    <path d="M57 150 Q74 158 88 154 L89 179 Q73 185 57 174Z M92 154 Q106 158 123 150 L123 174 Q107 185 91 179Z" fill={part('glutes')}/>
-    <path d="M57 181 Q72 185 86 181 L76 238 Q72 250 59 247 Q51 245 53 233Z M94 181 Q108 185 123 181 L127 233 Q129 245 121 247 Q108 250 104 238Z" fill={part('hamstrings')}/>
-    <path d="M54 250 Q66 253 75 247 L69 302 Q67 314 57 313 Q48 312 48 300Z M105 247 Q114 253 126 250 L132 300 Q132 312 123 313 Q113 314 111 302Z" fill={part('calves')}/>
-    <path d="M39 68 Q48 67 55 79 L46 125 Q40 133 33 127 L27 119Z M125 79 Q132 67 141 68 L153 119 L147 127 Q140 133 134 125Z" fill={part('triceps')}/>
-    <path d="M28 124 Q38 133 46 128 L40 158 Q34 165 28 157Z M134 128 Q142 133 152 124 L152 157 Q146 165 140 158Z" fill={part('forearms')}/>
-    <path d="M90 64 L90 151 M90 155 L90 177" fill="none" stroke="#B18D83" strokeWidth="1.5" opacity=".7"/>
-   </g>:<g>
-    <path d="M39 64 Q53 52 73 62 L87 77 L82 100 Q62 107 47 94Z M107 62 Q127 52 141 64 L133 94 Q118 107 98 100 L93 77Z" fill={part('shoulders')}/>
-    <path d="M47 91 Q68 82 88 96 L86 126 Q68 137 51 121Z M93 96 Q112 82 133 91 L129 121 Q112 137 94 126Z" fill={part('chest')}/>
-    <path d="M55 127 Q72 135 88 130 L87 177 Q72 184 58 175Z M92 130 Q108 135 125 127 L122 175 Q108 184 93 177Z" fill={part('abs')}/>
-    <path d="M39 76 Q48 82 52 97 L45 139 Q38 147 31 137 L28 111Z M128 97 Q132 82 141 76 L152 111 L149 137 Q142 147 135 139Z" fill={part('biceps')}/>
-    <path d="M31 140 Q39 147 46 141 L40 165 Q33 171 28 162Z M134 141 Q141 147 149 140 L152 162 Q147 171 140 165Z" fill={part('forearms')}/>
-    <path d="M58 181 Q73 185 87 181 L80 238 Q77 250 63 248 Q52 246 53 233Z M93 181 Q107 185 122 181 L127 233 Q128 246 117 248 Q103 250 100 238Z" fill={part('quads')}/>
-    <path d="M54 250 Q65 253 76 247 L70 302 Q68 314 58 313 Q48 312 48 300Z M104 247 Q115 253 126 250 L132 300 Q132 312 122 313 Q112 314 110 302Z" fill={part('calves')}/>
-    <path d="M90 96 L90 177" fill="none" stroke="#B18D83" strokeWidth="1.2" opacity=".55"/>
-   </g>}
-   <path d="M65 12 Q90 2 115 12" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity=".35"/>
-   <path d="M40 70 Q48 62 55 65 M125 65 Q133 62 140 70" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity=".45"/>
-  </g>
- </svg>;
- const labels:Record<string,string>={chest:'Pecho',shoulders:'Hombros',biceps:'Bíceps',triceps:'Tríceps',upperback:'Espalda alta',lowerback:'Lumbar',abs:'Abdominales',glutes:'Glúteos',quads:'Cuádriceps',hamstrings:'Isquiosurales',calves:'Gemelos',forearms:'Antebrazos'};
+ const mountRef=useRef<HTMLDivElement>(null);
+ const [loading,setLoading]=useState(true);
+ const [error,setError]=useState('');
+ const [view,setView]=useState<'front'|'back'|'side'>('front');
+ const activeKey=active.join('|');
+ useEffect(()=>{
+  const mount=mountRef.current;
+  if(!mount)return;
+  let disposed=false;
+  let frame=0;
+  let model:THREE.Group|null=null;
+  const scene=new THREE.Scene();
+  scene.background=null;
+  const camera=new THREE.PerspectiveCamera(32,1,0.01,100);
+  camera.position.set(0,0.25,4.2);
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.setClearColor(0x000000,0);
+  mount.appendChild(renderer.domElement);
+  renderer.domElement.style.width='100%';
+  renderer.domElement.style.height='100%';
+  renderer.domElement.style.display='block';
+  const controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;
+  controls.dampingFactor=0.075;
+  controls.enablePan=false;
+  controls.minDistance=1.5;
+  controls.maxDistance=7;
+  controls.minPolarAngle=0.08;
+  controls.maxPolarAngle=Math.PI-0.08;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9ba99f,2.0));
+  const keyLight=new THREE.DirectionalLight(0xffffff,2.2);keyLight.position.set(3,5,5);scene.add(keyLight);
+  const fillLight=new THREE.DirectionalLight(0xffffff,1.1);fillLight.position.set(-4,1,-3);scene.add(fillLight);
+  const rimLight=new THREE.DirectionalLight(0xd8e8df,1.2);rimLight.position.set(0,3,-5);scene.add(rimLight);
+  const draco=new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/gh/tiralonghipol/free-muscles@605dd1ca351421ad874a03f673a2a3f915ab254e/public/draco/');
+  const loader=new GLTFLoader();loader.setDRACOLoader(draco);
+  const modelUrl='https://cdn.jsdelivr.net/gh/tiralonghipol/free-muscles@605dd1ca351421ad874a03f673a2a3f915ab254e/public/anatomy.glb';
+  const activeGroups=new Set(activeKey?activeKey.split('|'):[]);
+  loader.load(modelUrl,gltf=>{
+   if(disposed)return;
+   model=gltf.scene;
+   model.updateMatrixWorld(true);
+   const bounds=new THREE.Box3().setFromObject(model);
+   const center=bounds.getCenter(new THREE.Vector3());
+   const size=bounds.getSize(new THREE.Vector3());
+   model.position.sub(center);
+   const maxDim=Math.max(size.x,size.y,size.z);
+   const scale=2.35/maxDim;
+   model.scale.setScalar(scale);
+   model.traverse(object=>{
+    if(!(object instanceof THREE.Mesh))return;
+    const info=object.userData as {kind?:string;group?:string};
+    if(info.kind==='muscle'){
+     const materials=Array.isArray(object.material)?object.material: [object.material];
+     object.material=materials.map(original=>{
+      const material=original.clone();
+      if(material instanceof THREE.MeshStandardMaterial){
+       const selected=!!info.group&&activeGroups.has(info.group);
+       material.color.set(selected?'#D783A5':'#C5D8CC');
+       material.emissive.set(selected?'#8C3F60':'#000000');
+       material.emissiveIntensity=selected?0.16:0;
+       material.roughness=0.72;
+      }
+      return material;
+     });
+     if(!Array.isArray(object.material))object.material=object.material[0];
+    }
+   });
+   scene.add(model);
+   const radius=Math.max(1.35,maxDim*scale*1.7);
+   camera.position.set(0,0.15,radius*2.7);
+   camera.near=0.01;camera.far=100;camera.updateProjectionMatrix();
+   controls.target.set(0,0,0);controls.update();
+   setLoading(false);
+  },undefined,()=>{
+   if(!disposed){setError('No se ha podido cargar el modelo anatómico 3D. Comprueba la conexión.');setLoading(false);}
+  });
+  const resize=()=>{
+   if(!mount)return;
+   const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);
+   camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);
+  };
+  const observer=new ResizeObserver(resize);observer.observe(mount);resize();
+  const animate=()=>{if(disposed)return;frame=requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);};
+  animate();
+  return ()=>{
+   disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();draco.dispose();
+   scene.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();const mats=Array.isArray(object.material)?object.material:[object.material];mats.forEach(material=>material.dispose());}});
+   renderer.dispose();if(renderer.domElement.parentElement===mount)mount.removeChild(renderer.domElement);
+  };
+ },[activeKey]);
+ const setPreset=(preset:'front'|'back'|'side')=>{
+  setView(preset);
+  const controls=(mountRef.current as HTMLDivElement & {__orbit?:OrbitControls})?.__orbit;
+  void controls;
+ };
  return <div className="body-map-v2 body-map-3d">
-  <div className="anatomy-stage" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
-   <div className="anatomy-model" style={{transform:`scaleX(${widthFactor}) rotateY(${normalized>90&&normalized<270?180:0}deg)`}}>
-    {view(isBack)}
-   </div>
-   <span className="anatomy-orientation">{isBack?'VISTA POSTERIOR':normalized>45&&normalized<135||normalized>225&&normalized<315?'VISTA LATERAL':'VISTA FRONTAL'}</span>
-   <span className="anatomy-hint">Arrastra para girar 360°</span>
+  <div className="anatomy-stage real-anatomy-stage">
+   <div className="anatomy-canvas" ref={mountRef}/>
+   {loading&&<div className="anatomy-loading">Cargando modelo anatómico 3D…</div>}
+   {error&&<div className="anatomy-loading anatomy-error">{error}</div>}
+   <span className="anatomy-hint">Arrastra para girar · Pellizca para acercar</span>
   </div>
   <div className="anatomy-controls">
-   <button type="button" onClick={()=>setAngle(v=>v-45)} aria-label="Girar a la izquierda">↶</button>
-   <button type="button" onClick={()=>setAngle(0)}>Frontal</button>
-   <button type="button" onClick={()=>setAngle(180)}>Espalda</button>
-   <button type="button" onClick={()=>setAngle(v=>v+45)} aria-label="Girar a la derecha">↷</button>
+   <button type="button" onClick={()=>setPreset('front')}>Frontal</button>
+   <button type="button" onClick={()=>setPreset('back')}>Espalda</button>
+   <button type="button" onClick={()=>setPreset('side')}>Lateral</button>
   </div>
-  <div className="muscle-key"><strong>{active.length?'MÚSCULOS TRABAJADOS':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{labels[id]||id}</span>):<small>Selecciona ejercicios para resaltar las zonas implicadas.</small>}</div><small>Rosa: músculo implicado · Verde: resto del cuerpo</small></div>
+  <div className="muscle-key"><strong>{active.length?'MÚSCULOS DEL EJERCICIO':'MAPA MUSCULAR'}</strong><div>{active.length?active.map(id=><span key={id}><i/>{id}</span>):<small>Selecciona un ejercicio para resaltar sus músculos.</small>}</div><small>Rosa: músculo implicado · Verde: resto de la musculatura</small></div>
+  <small className="anatomy-credit">Modelo anatómico derivado de Z-Anatomy / BodyParts3D · CC BY-SA 4.0</small>
  </div>;
 }
 function BodyStats({metrics,heightCm,age,sex,targetWeight}:{metrics:Metric[];heightCm:number;age:number;sex:'male'|'female';targetWeight:number}) {
