@@ -156,6 +156,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
     const people: Person[] = next === 'together' ? ['jorge', 'marta'] : [next]
     setSetPerson(people.includes(person) ? person : people[0])
     setData(d => ({ ...d, active: { mode: next, people, startedAt: Date.now(), sets: [], note: '' } }))
+    setExercise(''); setExerciseSearch(''); setCustomExercise('')
     setTab('train'); setNotice('Entrenamiento iniciado')
   }
   function addSet() {
