@@ -215,3 +215,6 @@ input,select,textarea{background:#F8FAF8!important;color:#35483F!important;borde
 .anatomy-controls button{min-width:40px;padding:8px 12px;border:1px solid #DCE7E0;border-radius:20px;background:#F5F8F5;color:#587466;font-size:11px;font-weight:700}
 .anatomy-controls button:active{background:#E5F1E9;transform:scale(.97)}
 @media(max-width:680px){.anatomy-stage{min-height:290px}.anatomy-model svg{height:260px!important;width:min(70vw,220px)!important}}
+
+.clear-exercise{border:0;background:transparent;color:#A36F88;text-decoration:underline;text-underline-offset:2px;font:inherit;font-weight:700;padding:2px 4px;cursor:pointer}
+.clear-exercise:hover{color:#80516A}
