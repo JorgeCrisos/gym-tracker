@@ -387,8 +387,8 @@ function BodyMap({active}:{active:string[]}) {
     const info=object.userData as {kind?:string;group?:string};
     if(info.kind==='muscle'){
      const wasArray=Array.isArray(object.material);
-     const materials=wasArray?object.material:[object.material];
-     const updated=materials.map(original=>{
+     const materials:THREE.Material[]=wasArray?object.material as THREE.Material[]:[object.material as THREE.Material];
+     const updated=materials.map((original:THREE.Material)=>{
       const material=original.clone();
       if(material instanceof THREE.MeshStandardMaterial){
        material.color.set('#C5D8CC');
