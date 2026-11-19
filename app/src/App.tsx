@@ -3,7 +3,7 @@ import { Activity, ArrowDownToLine, BarChart3, CalendarDays, Check, ChevronRight
 
 export type Person = 'jorge' | 'marta'
 type Mode = Person | 'together'
-type Tab = 'train' | 'routines' | 'history' | 'prs' | 'stats' | 'charts' | 'body'
+type Tab = 'home' | 'train' | 'routines' | 'history' | 'prs' | 'stats' | 'charts' | 'body' | 'goals' | 'profile'
 type SetEntry = { id: string; exercise: string; person: Person; weight: number; reps: number; rpe: number; rest: number }
 export type Workout = { id: string; date: string; mode: Mode; people: Person[]; sets: SetEntry[]; duration: number; note: string }
 type Exercise = { id: string; name: string; sets: number; reps: number; rest: number }
@@ -207,7 +207,7 @@ export default function App({ initialData, currentPerson, partnerPerson, partner
 
   return <div className="layout">
     <aside className="sidebar">
-      <a className="brand" href="#" onClick={e => { e.preventDefault(); setTab('home') }}><span className="brand-icon"><Dumbbell size={19} /></span><span>gym<span>log</span></span></a>
+      <a className="brand" href="#" onClick={e => { e.preventDefault(); setTab('train') }}><span className="brand-icon"><Dumbbell size={19} /></span><span>gym<span>log</span></span></a>
       <div className="side-label">TU ESPACIO</div>
       <nav>{nav.map(n => <button key={n.id} className={'nav-item ' + (tab === n.id ? 'active' : '')} onClick={() => setTab(n.id)}><n.icon size={18} /><span>{n.label}</span>{n.id === 'train' && data.active && <i />}</button>)}</nav>
       <div className="sidebar-bottom"><div className="privacy-note"><Activity size={16} /><span>Guardado automático<br /><b>{cloudEnabled ? 'Sincronizado' : 'En este dispositivo'}</b></span></div><small>GYMLOG · {cloudEnabled ? 'CLOUD' : 'BETA LOCAL'}</small></div>
