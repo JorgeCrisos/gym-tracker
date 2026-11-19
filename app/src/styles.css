@@ -191,3 +191,13 @@ input,select,textarea{background:#F8FAF8!important;color:#35483F!important;borde
 .trend-bar{width:min(34px,75%);min-height:4px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,#D99BB3,#B8DCCB)}
 .trend-column small{font-size:9px;color:#819188;white-space:nowrap}.trend-column b{font-size:9px;color:#60796B;white-space:nowrap}
 @media(max-width:680px){.mobile-nav{gap:0;padding:7px 2px calc(7px + env(safe-area-inset-bottom))!important}.mobile-nav button{min-width:0;gap:3px}.mobile-nav small{font-size:7px;letter-spacing:-.2px}.history-filter{grid-template-columns:1fr}.anatomy-figure{max-height:260px!important;max-width:155px!important}.body-map-v2{grid-template-columns:1fr!important}.anatomy-views{grid-template-columns:1fr 1fr!important}.muscle-key>div{display:grid!important;grid-template-columns:1fr 1fr!important}}
+
+/* Pastel treatment for authentication and remaining mobile surfaces */
+.auth-screen{background:radial-gradient(ellipse at 15% 5%,#EAF3ED 0%,transparent 42%),linear-gradient(145deg,#F8FAF7,#F7F1F4)!important;color:#35483F!important}
+.auth-card{background:rgba(255,254,252,.96)!important;border:1px solid #E1EAE3!important;box-shadow:0 18px 50px rgba(74,100,84,.10)!important;color:#35483F!important}
+.auth-card h1,.auth-card p,.auth-card label{color:#35483F!important}
+.auth-card input,.auth-card select{background:#F8FAF8!important;color:#35483F!important;border-color:#DCE6DF!important}
+.auth-mark{background:#D8EBDD!important;color:#587D69!important}
+.auth-switch{color:#648D78!important}
+.auth-card>small{color:#819188!important}
+:root{color-scheme:light}
